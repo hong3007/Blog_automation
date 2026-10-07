@@ -107,12 +107,7 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .foot.row>button.primary{flex:1 1 100%} /* 주 동작은 한 줄 전체, 나머지는 그 아래 */
 /* ③: 📋 글 전체 복사는 한 줄 전체를 쓰는 주 버튼 */
 /* 블로그에 옮기는 순서대로 한 줄씩: 제목 → 글 → 사진 */
-.foot.row>button#copyTitleBtn,.foot.row>button#copyAllBtn,.foot.row>button#nextPhotoBtn,.foot.row>button#sharePhotosBtn{flex:1 1 100%}
-/* 폰(블로그 앱)은 붙여넣기에서 그림을 빼므로 📷 한 장씩 복사는 숨기고 📤 한꺼번에 보내기를 쓴다 */
-.phone #nextPhotoBtn,.phone .imgcp{display:none}
-/* 간편 모드(기본): 자주 안 쓰는 칸·버튼(.adv)을 숨긴다. 상단 🧰 자세히로 전부 보기 */
-/* 선택 삭제 버튼이 없으니 체크박스도, 📋 글 전체 복사가 있으니 미리보기 칸별 「복사」도 숨김 (「📷 복사」는 남김) */
-html.easy .adv,html.easy .ph .pick input,html.easy .sec-h button:not(.imgcp){display:none!important}
+.foot.row>button#copyTitleBtn,.foot.row>button#copyAllBtn{flex:1 1 100%}
 .hint{font-size:13px;color:var(--sub)}
 .status{font-size:13px;margin-top:10px;white-space:pre-line;word-break:break-word}
 .status:empty{display:none}
@@ -149,16 +144,13 @@ html.ov-lock,html.ov-lock body{overflow:hidden}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(124px,1fr));gap:10px;margin-top:12px}
 .grid:empty{display:none}
 .ph{border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;background:var(--card);position:relative;box-shadow:var(--shadow);transition:border-color .12s,box-shadow .12s}
-.ph.sel{border-color:var(--accent);box-shadow:0 0 0 3px var(--ring)}
 .ph.dragover{border-color:var(--accent);border-style:dashed}
 .ph.dragging{opacity:.4}
 .ph .bar{display:flex;align-items:center;gap:6px;padding:3px 4px 3px 8px;background:var(--card2);border-bottom:1px solid var(--line);font-size:12px;font-weight:700}
-.ph.sel .bar{background:var(--accent-soft);color:var(--accent-text)}
 .ph .bar .handle{cursor:grab;color:var(--sub);font-size:14px}
 .ph .bar .x{margin-left:auto;cursor:pointer;color:var(--sub);border:none;background:none;padding:2px 6px;font-size:14px;border-radius:6px;box-shadow:none}
 /* 선택은 윗줄 체크박스로만 한다 (카드 아무 데나 눌러서 선택되면 키워드 입력하다 잘못 눌림) */
 .ph .pick{display:flex;align-items:center;gap:6px;flex:1;margin:0;min-height:28px;color:inherit;font-size:12px;font-weight:700;cursor:pointer}
-.ph .pick input{width:16px;height:16px;margin:0;accent-color:var(--accent)}
 .ph .pic{position:relative}
 .ph img{width:100%;aspect-ratio:4/3;height:auto;object-fit:cover;display:block;cursor:zoom-in;background:var(--muted)}
 /* 순서 이동 버튼: 터치에서는 끌어서 옮기기가 안 되므로 누르는 방식도 둔다 */
@@ -220,7 +212,9 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;b
 .htext{flex:1;min-width:0}
 .htext .ht{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .htext .hint{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hitem .hdel{flex:none;border:none;background:none;padding:4px 8px;opacity:.6}
+/* 글마다 ✅ 발행 완료 / 💾 파일로 받기 / 🗑 삭제 */
+.hitem .hbtn{flex:none;border:none;background:none;padding:4px 6px;min-height:0;opacity:.7}
+@media (hover:hover){ .hitem .hbtn:hover{opacity:1;background:var(--muted)} }
 .hist-foot{margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 #offscreen{position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;color:#1d2129;background:#fff}
 
@@ -250,12 +244,10 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;b
   .ph .bar{padding:0 0 0 8px}
   .ph .bar .x{min-height:40px;min-width:40px}
   .ph .pick{min-height:40px}
-  .ph .pick input{width:20px;height:20px}
   .ph .mv{width:40px;height:40px}
   .ph .meta input{min-height:40px}
   .foot.row>button{flex:1 1 calc(50% - 8px)}
-  .col .foot button{min-height:44px} /* ③의 📋·📷·📤 등은 손가락으로 연달아 누르는 버튼 */
-  #zoomBtn{display:none} /* 폰은 ③이 이미 화면 폭 전체라 크게 보기가 필요 없다 */
+  .col .foot button{min-height:44px} /* ③의 🏷️·📋 등은 손가락으로 연달아 누르는 버튼 */
   .modal .close{width:40px;height:40px}
   .drawer .modal{max-width:88%}
   .overlay{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
@@ -267,10 +259,7 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;b
 
 <div class="topbar">
 <h1>📸 블로그 포스팅 준비</h1>
-<span class="steps adv">① 사진·키워드 → ② 정보·API 키 → <b>✨ 초안 생성</b> → ③ 확인·고치기 → <b>📋 글 전체 복사</b> → 붙여넣기 → <b>📷 다음 사진 복사</b>로 사진을 하나씩 제자리에 (폰은 📤로 한꺼번에도 가능)</span>
 <button id="histBtn">🗂 내 초안</button>
-<button id="modeBtn"></button>
-<button id="setBtn" class="adv" title="설정" aria-label="설정">⚙️ 설정</button>
 <button id="resetAllBtn">🆕 새 포스팅</button>
 </div>
 
@@ -288,12 +277,6 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;b
   <input type="file" id="fileIn" accept="image/*" multiple style="display:none">
   <div class="grid" id="grid"></div>
 </div>
-<div class="foot row adv">
-  <button id="pasteBtn" title="복사해 둔 사진을 붙여넣기 (PC는 Ctrl+V도 됨)">📋 사진 붙여넣기</button>
-  <button id="selAllBtn" class="adv">전체 선택</button>
-  <button id="selClearBtn" class="adv">선택 해제</button>
-  <button id="selDelBtn" class="adv">선택 삭제</button>
-</div>
 </div>
 
 <!-- ② 정보 -->
@@ -309,20 +292,18 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;b
     <option value="camping">🏕️ 캠핑·백패킹</option>
     <option value="daily">📔 일상</option>
   </select>
-  <div class="persona-desc adv" id="typeDesc"></div>
-  <label class="lbl-row adv">인격 (글 말투) <button id="personaHelp" class="small">자세히</button></label>
-  <select id="persona" class="adv">
+  <div class="persona-desc" id="typeDesc"></div>
+  <label class="lbl-row">인격 (글 말투) <button id="personaHelp" class="small">자세히</button></label>
+  <select id="persona">
     <option value="28life">28 life (내 블로그 말투) — 기본</option>
     <option value="clean">담백 정보형</option>
     <option value="emotional">감성 에세이형</option>
     <option value="friend">친구한테 말하듯</option>
   </select>
-  <div class="persona-desc adv" id="personaDesc"></div>
-  <label class="adv">포스팅명 (폴더 이름)</label>
-  <input type="text" id="postName" class="adv" placeholder="예: 성수동_카페">
+  <div class="persona-desc" id="personaDesc"></div>
   <label id="placeHintLbl">장소 이름</label>
   <input type="text" id="placeHint" placeholder="예: 성수동 ○○카페">
-  <div class="place-box adv" id="placeBox">
+  <div class="place-box" id="placeBox">
     <div class="lbl-row"><b>📍 위치 정보</b> <span class="hint">알면 입력 · 비워 두면 🪄로 찾기</span></div>
     <label for="addrIn">주소</label>
     <input type="text" id="addrIn" placeholder="예: 경기도 수원시 영통구 대학1로58번길 6">
@@ -356,11 +337,7 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;b
 </div>
 <div class="foot row">
   <button id="copyTitleBtn" title="제목 복사 → 에디터 맨 위 제목 칸에 붙여넣기">🏷️ 제목 복사</button>
-  <button id="copyAllBtn" class="primary" title="본문 글 전체(지도 포함)를 서식째 복사 → 에디터 본문에 붙여넣기. 제목은 🏷️ 제목 복사, 사진은 아래 📷로 한 장씩">📋 글 전체 복사</button>
-  <button id="nextPhotoBtn" class="soft" title="누를 때마다 ① 순서대로 사진 한 장을 복사 → 블로그에서 그 사진 자리에 붙여넣기">📷 다음 사진 복사</button>
-  <button id="sharePhotosBtn" hidden title="사진 전부를 순서대로 네이버 블로그 앱 등으로 보내기 (글은 📋로 따로)">📤 사진 한꺼번에 보내기</button>
-  <button id="saveDraftBtn" class="adv">💾 파일로 저장</button>
-  <button id="zoomBtn" class="adv">🔍 크게 보기</button>
+  <button id="copyAllBtn" class="primary" title="본문 글 전체(지도 포함)를 서식째 복사 → 에디터 본문에 붙여넣기. 제목은 🏷️ 제목 복사, 사진은 글 속 [사진 N] 자리에 직접">📋 글 전체 복사</button>
 </div>
 </div>
 
@@ -395,14 +372,6 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;b
   </div>
 </div>
 
-<!-- 미리보기 확대 오버레이 -->
-<div class="overlay" id="zoomOv">
-  <div class="modal">
-    <button class="close" onclick="closeOv('zoomOv')">✕</button>
-    <h3>초안 미리보기</h3>
-    <div class="mbody" id="zoomBody"></div>
-  </div>
-</div>
 
 <!-- ⚙️ 설정 (모든 초안에 공통, 이 브라우저에 저장) -->
 <div class="overlay" id="setOv">
@@ -465,8 +434,8 @@ let draft = null;
 let dirty = false; // 생성·수정 후 아직 저장 안 한 초안이 있는지 (페이지 떠날 때 경고용)
 let ovIndex = -1;
 let curId = null;  // 🗂 내 초안에서 지금 화면이 어느 기록인지 (null = 아직 기록 안 됨)
+let curDone = false; // 지금 기록이 ✅ 발행 완료로 표시됐는지
 let saveTimer = 0;
-let photoNext = 0; // 📷 다음 사진 복사가 다음에 복사할 사진 (0부터, 사진·초안이 바뀌면 처음으로)
 
 // 메시지 앞머리로 종류를 정한다: ⚠️=오류, ✅=성공, "..."=진행 중
 let toastTimer=0;
@@ -484,23 +453,11 @@ function setStatus(t){
 }
 $('toast').onclick=()=>$('toast').classList.remove('show');
 
-/* ---------- 간편 모드 (기본) ↔ 자세히: localStorage 'blogEasy' ('0'이면 자세히) ---------- */
-let easy=true;
-try{ easy=localStorage.getItem('blogEasy')!=='0'; }catch(_){}
-function applyMode(){
-  document.documentElement.classList.toggle('easy',easy);
-  $('modeBtn').textContent=easy?'🧰 자세히':'✨ 간편하게';
-  $('modeBtn').title=easy?'말투·주소·주차 칸, 🪄 검색, 💾 저장 등 모든 기능 보기':'자주 쓰는 것만 보기';
-}
-$('modeBtn').onclick=()=>{ easy=!easy; try{ localStorage.setItem('blogEasy',easy?'1':'0'); }catch(_){} applyMode(); };
-applyMode();
 
 function openOv(id){ $(id).classList.add('show'); document.documentElement.classList.add('ov-lock'); }
 function closeOv(id){
   $(id).classList.remove('show');
   if(!document.querySelector('.overlay.show')) document.documentElement.classList.remove('ov-lock');
-  // 확대 보기를 닫으면 미리보기를 원래 자리로 되돌린다
-  if(id==='zoomOv' && draft) renderOut($('out'));
 }
 // 잠금 창(dupOv)은 Esc·바깥 클릭으로 닫히지 않는다 ("이 창에서 계속하기"로만)
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay.show').forEach(o=>o.id!=='dupOv'&&closeOv(o.id)); });
@@ -550,7 +507,7 @@ function updateTypeUI(){
 $('postType').addEventListener('change',()=>{ updateTypeUI(); updateBtns(); if(draft) renderOut(); });
 
 /* ---------- 입력칸 기억 (localStorage) — API 키는 절대 여기 넣지 않는다 ---------- */
-const FORM_KEYS=['postType','persona','postName','placeHint','memo','addrIn','parkIn','hoursIn'];
+const FORM_KEYS=['postType','persona','placeHint','memo','addrIn','parkIn','hoursIn'];
 try{ const s=JSON.parse(localStorage.getItem('blogForm')||'{}'); FORM_KEYS.forEach(k=>{ if(typeof s[k]==='string') $(k).value=s[k]; }); }catch(_){}
 if(!$('persona').value) $('persona').value='28life'; // 저장된 값이 옛 옵션이면 기본값으로
 if(!$('postType').value) $('postType').value='food';
@@ -586,7 +543,7 @@ async function addFiles(files){
           short=`${z(dt.getFullYear()%100)}.${z(dt.getMonth()+1)}.${z(dt.getDate())} ${z(dt.getHours())}:${z(dt.getMinutes())}`;
         } } }catch(_){}
       // crypto.randomUUID는 https/localhost에서만 있어서 모바일 file:// 등에서 깨진다
-      photos.push({id:Date.now()+Math.random(),src,keyword:'',gps,time,short,file:f,sel:false});
+      photos.push({id:Date.now()+Math.random(),src,keyword:'',gps,time,short,file:f});
     }catch(err){ alert(f.name+' 을(를) 못 읽었어. HEIC면 JPG로 바꿔서 올려줘.'); }
   }
   setStatus(''); renderGrid();
@@ -604,20 +561,6 @@ document.addEventListener('paste', async e=>{
   await addFiles(files.map((f,i)=>new File([f],`붙여넣기-${Date.now()}-${i+1}.${f.type.split('/')[1]||'png'}`,{type:f.type})));
   setStatus(`✅ 사진 ${files.length}장 붙여넣었어.`);
 });
-// 모바일은 Ctrl+V가 없어서 버튼으로 읽는다 (브라우저가 '붙여넣기' 허용을 물어볼 수 있음)
-$('pasteBtn').onclick=async ()=>{
-  if(!navigator.clipboard||!navigator.clipboard.read) return setStatus('⚠️ 이 브라우저는 버튼 붙여넣기를 지원하지 않아. PC는 Ctrl+V를 눌러줘.');
-  try{
-    const files=[];
-    for(const item of await navigator.clipboard.read()){
-      const t=item.types.find(x=>x.startsWith('image/')); if(!t) continue;
-      const b=await item.getType(t);
-      files.push(new File([b],`붙여넣기-${Date.now()}-${files.length+1}.${t.split('/')[1]||'png'}`,{type:t}));
-    }
-    if(!files.length) return setStatus('⚠️ 클립보드에 사진이 없어. 사진을 먼저 복사해줘.');
-    await addFiles(files); setStatus(`✅ 사진 ${files.length}장 붙여넣었어.`);
-  }catch(err){ setStatus('⚠️ 클립보드를 읽지 못했어. 브라우저의 붙여넣기 허용을 눌러줘.'); }
-};
 
 // ① 사진 컬럼 전체를 드롭 영역으로 쓴다 (작은 점선 박스 말고)
 const photoBody=$('photoBody');
@@ -658,11 +601,11 @@ function renderGrid(){
   }
   photos.forEach((p,i)=>{
     const d=document.createElement('div');
-    d.className='ph'+(p.sel?' sel':'');
+    d.className='ph';
     // 위치·촬영시각은 있을 때만 표시한다 (없으면 줄 자체를 만들지 않음)
     const metaBits=[]; if(p.gps) metaBits.push('📍'); if(p.short) metaBits.push(p.short);
     const metaLine=metaBits.length?`<div class="tiny">${metaBits.join(' · ')}</div>`:'';
-    d.innerHTML=`<div class="bar"><label class="pick"><input type="checkbox"${p.sel?' checked':''}><span>${i+1}</span></label><span class="handle" title="끌어서 순서 변경">⠿</span><button class="x" title="삭제" aria-label="삭제">✕</button></div>
+    d.innerHTML=`<div class="bar"><span class="pick">${i+1}</span><span class="handle" title="끌어서 순서 변경">⠿</span><button class="x" title="삭제" aria-label="삭제">✕</button></div>
       <div class="pic">
         <img src="${p.src}" title="크게 보기">
         <button class="mv" data-d="-1" title="앞으로" aria-label="앞으로 이동"${i===0?' disabled':''}>◀</button>
@@ -674,8 +617,6 @@ function renderGrid(){
       </div>`;
 
     d.querySelector('.meta input').oninput=ev=>{ p.keyword=ev.target.value; scheduleSave(); };
-    // 선택 토글은 다시 그리지 않고 클래스만 바꾼다 (입력 중인 글자가 날아가지 않게)
-    d.querySelector('.pick input').onchange=ev=>{ p.sel=ev.target.checked; d.classList.toggle('sel',p.sel); };
     d.querySelector('.x').onclick=()=>{ photos.splice(i,1); renderGrid(); };
     d.querySelector('img').onclick=()=>openPhoto(i);
     d.querySelectorAll('.mv').forEach(b=>b.onclick=()=>movePhoto(i,i+Number(b.dataset.d)));
@@ -697,7 +638,6 @@ function renderGrid(){
     g.appendChild(d);
   });
   scheduleSave(); // 사진 추가·삭제·순서 변경도 기록에 반영
-  photoNext=0; // 사진 순서가 바뀌었을 수 있으니 📷는 처음부터
   updateBtns();
 }
 
@@ -706,15 +646,6 @@ function movePhoto(from,to){
   const [m]=photos.splice(from,1); photos.splice(to,0,m); renderGrid();
 }
 
-// 선택 상태만 화면에 반영한다 (입력 중인 키워드가 날아가지 않게 다시 그리지 않음)
-function syncSel(){ [...$('grid').children].forEach((el,i)=>{ const s=!!(photos[i]&&photos[i].sel); el.classList.toggle('sel',s); el.querySelector('.pick input').checked=s; }); }
-$('selAllBtn').onclick=()=>{ photos.forEach(p=>p.sel=true); syncSel(); };
-$('selClearBtn').onclick=()=>{ photos.forEach(p=>p.sel=false); syncSel(); };
-$('selDelBtn').onclick=()=>{
-  const n=photos.filter(p=>p.sel).length;
-  if(!n) return setStatus('선택된 사진이 없어.');
-  photos=photos.filter(p=>!p.sel); renderGrid(); setStatus(`${n}장 삭제했어.`);
-};
 
 /* ---------- 사진 상세 오버레이 ---------- */
 function openPhoto(i){
@@ -772,7 +703,7 @@ function syncKey(){
 $('apiKey').oninput=syncKey;
 $('keyEye').onclick=()=>{ const k=$('apiKey'); k.type=k.type==='password'?'text':'password'; };
 $('keyMode').onchange=e=>{ settings.keyMode=e.target.value; saveSettings(); syncKey(); showSettings(); };
-$('setBtn').onclick=$('openSet2').onclick=()=>{ showSettings(); openOv('setOv'); };
+$('openSet2').onclick=()=>{ showSettings(); openOv('setOv'); };
 
 /* ---------- Claude API ---------- */
 const MODEL='claude-sonnet-5-5';
@@ -935,17 +866,14 @@ function updateBtns(){
   // 🪄는 초안이 없어도 장소 이름만 있으면 ②의 위치 정보 칸을 미리 채울 수 있다
   const canWand=!busy&&!isDaily()&&!!(draft||$('placeHint').value.trim());
   $('wandBtn').disabled=!canWand;
-  ['saveDraftBtn','copyAllBtn','zoomBtn','copyTitleBtn'].forEach(id=>$(id).disabled=!draft);  // 📷·📤는 사진만 있으면 된다 (초안 없이도)
-  const n=photos.length;
-  $('nextPhotoBtn').disabled=$('sharePhotosBtn').disabled=!n;
-  $('nextPhotoBtn').textContent=!n?'📷 다음 사진 복사':photoNext>=n?`📷 처음부터 다시 (1/${n})`:`📷 사진 ${photoNext+1}/${n} 복사`;
+  ['copyAllBtn','copyTitleBtn'].forEach(id=>$(id).disabled=!draft);
 }
 
 $('genBtn').onclick=async ()=>{
   if(busy) return;
   if(!photos.length) return setStatus('⚠️ 사진을 먼저 올려줘.');
   setBusy(true,'genBtn');
-  let autoWand=false;
+  let autoWand='';
   try{
     setStatus('사진 준비 중...');
     const content=[];
@@ -979,17 +907,18 @@ $('genBtn').onclick=async ()=>{
     });
     const d=findJSON(textOf(j));
     if(!d) throw new Error('Claude 응답을 읽지 못했어. 다시 눌러줘.');
-    draft=fixEmphasis(d); dirty=true; photoNext=0;
+    draft=fixEmphasis(d); dirty=true;
     applyPlaceInfo(info); // Claude가 놓쳐도 ②의 위치 정보가 그대로 들어가게 한 번 더 맞춘다
     renderOut(); updateDraftLabel(); saveHistory();
-    setStatus(`✅ 초안 완성! (${usageText(j)}) 확인·고친 뒤 📋 글 전체 복사 → 붙여넣기 → ${IS_PHONE?'📤 사진 한꺼번에 보내기':'📷 다음 사진 복사로 사진을 하나씩 제자리에'}. 🗂 내 초안에 자동 저장돼`);
+    const msg=`✅ 초안 완성! (${usageText(j)}) 확인·고친 뒤 🏷️ 제목 복사 → 📋 글 전체 복사 → 붙여넣고 글 속 [사진 N] 자리에 사진 넣기. 🗂 내 초안에 자동 저장돼`;
+    setStatus(msg);
     // 모바일은 ③이 화면 아래에 있으니 결과로 내려 준다
     if(matchMedia('(max-width:899px)').matches) $('out').closest('.col').scrollIntoView({behavior:'smooth',block:'start'});
-    // 간편 모드는 주소·주차 칸이 숨어 있으니, 장소 글이고 주소를 안 적었으면 🪄 검색을 알아서 한다 (전에 찾은 장소면 토큰 0)
-    autoWand=easy&&!isDaily()&&!info.address&&!!((draft.place&&draft.place.name)||$('placeHint').value.trim());
+    // ②의 위치 정보(주소·주차·영업시간)에 빈 칸이 있으면 🪄 검색으로 빈 칸만 채운다. 적어 둔 칸은 그대로 쓴다
+    if(!isDaily()&&!(info.address&&info.parking&&info.hours)&&((draft.place&&draft.place.name)||$('placeHint').value.trim())) autoWand=msg;
   }catch(err){ setStatus('⚠️ '+err.message); }
   finally{ setBusy(false,'genBtn'); }
-  if(autoWand) runWand();
+  if(autoWand) runWand(autoWand);
 };
 
 /* ---------- 📍 위치 정보: ② 입력칸 ↔ 초안 ---------- */
@@ -1047,10 +976,12 @@ $('placeHint').addEventListener('change',()=>{
   fillPlaceInfo(c,false); setStatus('✅ 전에 🪄로 찾아 둔 위치 정보를 채웠어 (토큰 사용 없음).');
 });
 
-/* ---------- 🪄 주차·주소 검색 (웹 검색, 누를 때만) ---------- */
+/* ---------- 🪄 주차·주소 검색 (웹 검색: 버튼, 또는 초안 생성 뒤 ②에 빈 칸이 있을 때 자동) ---------- */
 let wandForce=''; // 캐시를 쓴 직후 같은 장소로 한 번 더 누르면 새로 검색
-async function runWand(){
+// auto: 초안 생성 직후 자동 실행일 때 그 완성 메시지. 자동일 때는 사용자가 적어 둔 칸을 덮어쓰지 않고 빈 칸만 채운다
+async function runWand(auto){
   if(busy) return;
+  const say=m=>setStatus(auto?auto+'\n'+m:m);
   const pl=(draft&&draft.place)||{};
   const name=pl.name||$('placeHint').value.trim();
   if(!name) return setStatus('⚠️ 장소 이름을 먼저 적어줘.');
@@ -1059,15 +990,15 @@ async function runWand(){
   // 기억해 둔 정보에 지도 위치가 없고 사진 GPS도 없으면(지도 그림을 못 만듦) 기억 대신 새로 검색
   if(cached&&(okLat(cached.lat)||placeCoords(draft))&&wandForce!==placeKey(name)){
     wandForce=placeKey(name);
-    fillPlaceInfo(cached,true);
-    return setStatus(`✅ "${name}"은 전에 찾아 둔 정보를 썼어 (토큰 사용 없음).\n새로 검색하려면 🪄를 한 번 더 눌러줘.`);
+    fillPlaceInfo(cached,!auto);
+    return say(`✅ "${name}"은 전에 찾아 둔 정보를 썼어 (토큰 사용 없음).\n새로 검색하려면 🪄를 한 번 더 눌러줘.`);
   }
   wandForce='';
   const g=(photos.find(p=>p.gps)||{}).gps;
   const d0=draft, h0=$('placeHint').value.trim(); // 검색 중에 초안·장소가 바뀌면(다른 초안·✕·🆕) 화면에는 반영하지 않는다
   setBusy(true,'wandBtn');
   try{
-    setStatus(`🪄 "${name}" 주소·주차 검색 중...`);
+    say(auto?`🪄 비어 있는 위치 정보를 "${name}"로 찾는 중...`:`🪄 "${name}" 주소·주차 검색 중...`);
     // 토큰 절약: 사진·도입부는 보내지 않고 이름·좌표만. 도입부 반영은 브라우저에서 직접 한다
     const j=await callClaude({
       max_tokens:4000,
@@ -1095,49 +1026,21 @@ async function runWand(){
     const found=[['주소',info.address],['주차',info.parking],['영업시간',info.hours],['지도 링크',info.map_url],['지도 위치',hasXY]].filter(x=>x[1]).map(x=>x[0]);
     if(found.length) placeCacheSet(names,{...info,sources:(r.sources||[]).filter(Boolean).slice(0,3)});
     if(draft!==d0||$('placeHint').value.trim()!==h0){ // 그 사이 바뀜: 캐시만 남기고 화면은 건드리지 않는다
-      return setStatus('🪄 검색이 끝났지만 그 사이 초안·장소가 바뀌어서 반영하지 않았어. 같은 장소에서 🪄를 누르면 토큰 없이 채워져.');
+      return say('🪄 검색이 끝났지만 그 사이 초안·장소가 바뀌어서 반영하지 않았어. 같은 장소에서 🪄를 누르면 토큰 없이 채워져.');
     }
     if(found.length&&draft){
       const src=(r.sources||[]).filter(Boolean).slice(0,3).join(' , ');
       draft.note=[draft.note,`🪄 검색으로 채운 정보(${found.join('·')})는 발행 전에 한 번 확인해줘.${src?' 출처: '+src:''}`].filter(Boolean).join('\n');
     }
-    fillPlaceInfo(info,true);
+    fillPlaceInfo(info,!auto);
     if(draft){ dirty=true; renderOut(); updateDraftLabel(); saveHistory(); }
-    setStatus(found.length?`✅ ${found.join('·')} 찾았어! (${usageText(j)})\n② 위치 정보 칸에 채웠고, 다음에 같은 장소면 검색 없이 바로 써.`
+    say(found.length?`✅ ${found.join('·')} 찾았어! (${usageText(j)})\n② 위치 정보 칸에 채웠고, 다음에 같은 장소면 검색 없이 바로 써.`
       :`검색했지만 확인된 정보가 없어서 "주차 정보 확인 필요"로 둘게. (${usageText(j)})`);
-  }catch(err){ setStatus('⚠️ '+err.message); }
+  }catch(err){ say('⚠️ '+(auto?'위치 정보 검색 실패: ':'')+err.message); }
   finally{ setBusy(false,'wandBtn'); }
 }
-$('wandBtn').onclick=runWand;
+$('wandBtn').onclick=()=>runWand();
 
-/* ---------- 💾 파일로 저장 → output/<포스팅명>/draft.json ---------- */
-$('saveDraftBtn').onclick=async ()=>{
-  if(!draft) return setStatus('저장할 초안이 없어.');
-  const postName=$('postName').value.trim()||'draft';
-  const json=JSON.stringify(draft,null,2);
-  if(!window.showDirectoryPicker){
-    // 폴더 쓰기가 안 되는 브라우저면 그냥 다운로드
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
-    a.download=postName+'.draft.json'; a.click();
-    // 바로 해제하면 일부 브라우저(특히 모바일)에서 다운로드가 시작되기 전에 끊긴다
-    setTimeout(()=>URL.revokeObjectURL(a.href),30000);
-    dirty=false;
-    return setStatus('✅ 다운로드 폴더에 저장했어.');
-  }
-  try{
-    setStatus('폴더 선택 창에서 output 폴더를 골라줘...');
-    const root=await window.showDirectoryPicker({mode:'readwrite'});
-    const dir=await root.getDirectoryHandle(postName,{create:true});
-    const fh=await dir.getFileHandle('draft.json',{create:true});
-    const w=await fh.createWritable(); await w.write(json); await w.close();
-    dirty=false;
-    setStatus(`✅ ${root.name}/${postName}/draft.json 저장 완료`);
-  }catch(err){
-    if(err.name==='AbortError') return setStatus('');
-    setStatus('⚠️ 저장 실패: '+err.message);
-  }
-};
 
 /* ---------- 초안 불러오기 · 미리보기 · 복사 ---------- */
 // 어떤 포스팅의 초안이 떠 있는지 제목으로 표시한다 (다른 포스팅 작업 중에 헷갈리지 않게)
@@ -1148,13 +1051,13 @@ function updateDraftLabel(){
   $('draftLabel').textContent='— '+(t.length>24?t.slice(0,24)+'…':t);
 }
 
-function clearDraft(){ flushSave(); draft=null; dirty=false; curId=null; $('out').innerHTML=''; $('zoomBody').innerHTML=''; updateDraftLabel(); }
+function clearDraft(){ flushSave(); draft=null; dirty=false; curId=null; curDone=false; $('out').innerHTML=''; updateDraftLabel(); }
 
 $('resetAllBtn').onclick=()=>{
   const had=!!(draft||photos.length); // 초안 생성 전이라도 사진이 있으면 🗂에 저장돼 있다
   clearDraft(); // 지금 초안은 🗂 내 초안에 저장해 두고 끊는다 (사진을 비우기 전에)
   photos=[]; renderGrid();
-  ['postName','placeHint','memo','addrIn','parkIn','hoursIn'].forEach(id=>$(id).value=''); saveForm(); wandForce=''; updateBtns(); // 장소 이름을 비웠으니 🪄도 끈다
+  ['placeHint','memo','addrIn','parkIn','hoursIn'].forEach(id=>$(id).value=''); saveForm(); wandForce=''; updateBtns(); // 장소 이름을 비웠으니 🪄도 끈다
   setStatus('새 포스팅을 시작해.'+(had?' 이전 초안은 🗂 내 초안에 있어.':''));
 };
 
@@ -1168,7 +1071,7 @@ $('draftIn').onchange=e=>{
     try{
       const j=JSON.parse(reader.result);
       // 사진이 든 샘플/꾸러미 파일: {draft, form, photos:[{src:'data:image/...'}]}. src는 화면 <img>에 그대로 들어가니 사진 data URL만 받는다
-      if(j&&j.draft&&Array.isArray(j.photos)){
+      if(j&&('draft' in j)&&Array.isArray(j.photos)&&(j.draft===null||typeof j.draft==='object')){
         if(!j.photos.every(p=>p&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(p.src))) throw new Error('사진 형식이 올바르지 않아');
         j.photos.forEach(p=>{ p.keyword=String(p.keyword||''); p.short=/^[\d. :]*$/.test(p.short||'')?String(p.short||''):''; /* 카드에 HTML로 들어감 */ p.time=p.time?String(p.time):null;
           p.gps=p.gps&&okLat(p.gps.lat)&&okLng(p.gps.lng)?{lat:p.gps.lat,lng:p.gps.lng}:null; });
@@ -1176,7 +1079,7 @@ $('draftIn').onchange=e=>{
       }
       const d=fixEmphasis(j);
       flushSave(); curId=null; // 불러온 파일은 🗂 내 초안에 새 기록으로 남긴다
-      draft=d; dirty=false; photoNext=0; renderOut(); updateDraftLabel(); saveHistory(); closeOv('histOv'); setStatus('✅ draft.json을 불러왔어.');
+      draft=d; dirty=false; renderOut(); updateDraftLabel(); saveHistory(); closeOv('histOv'); setStatus('✅ draft.json을 불러왔어.');
     }
     catch(err){ setStatus('⚠️ draft.json을 읽지 못했어: '+err.message); }
   };
@@ -1222,7 +1125,7 @@ function syncEdit(el){
   }
   dirty=true; scheduleSave();
 }
-['out','zoomBody'].forEach(id=>$(id).addEventListener('input',e=>syncEdit(e.target.closest&&e.target.closest('.cp'))));
+$('out').addEventListener('input',e=>syncEdit(e.target.closest&&e.target.closest('.cp')));
 
 // 붙여넣을 HTML: 화면용 class·id를 빼고 강조 색은 인라인으로 박는다 (다크 모드 색이 따라가지 않게)
 function clipHTML(el){
@@ -1308,10 +1211,9 @@ function draftHTML(){
   (d.photos||[]).forEach(p=>{
     const i=p.index-1; const img=photos[i]?`<img class="pimg" src="${photos[i].src}">`:'';
     const id='cp-photo-'+p.index;
-    const label=`사진 ${p.index}${i===ti?'<span class="thumb-badge">대표</span>':''}`;
-    // 「📷 복사」: 이 사진만 다시 복사 (📷 다음 사진 순서도 여기 다음으로)
-    const imgBtn=photos[i]?`<button class="imgcp" onclick="copyPhotoAt(${i},this)" title="이 사진을 복사 → 블로그의 이 사진 자리에 붙여넣기">📷 복사</button>`:'';
-    h+=`<div class="sec"><div class="sec-h"><span>${label}</span><span class="btns">${imgBtn}<button onclick="copyNode('${id}',this)">복사</button></span></div>${img}<div class="cp" id="${id}" contenteditable="${EDITABLE}" style="margin-top:6px">${emphasisHTML(p.text,p.emphasis)}</div></div>`;
+    // 머리 글자는 복사되는 자리 표시([사진 N])와 같게 → 블로그에서 어느 사진을 넣을지 바로 맞춰 볼 수 있다
+    const label=`${esc(photoMark(p.index))}${i===ti?'<span class="thumb-badge">대표</span>':''}`;
+    h+=`<div class="sec"><div class="sec-h"><span>${label}</span><span class="btns"><button onclick="copyNode('${id}',this)">복사</button></span></div>${img}<div class="cp" id="${id}" contenteditable="${EDITABLE}" style="margin-top:6px">${emphasisHTML(p.text,p.emphasis)}</div></div>`;
     if(p.emphasis&&p.emphasis.type){
       const tl={highlight:'형광펜',underline:'밑줄',bold:'굵게'}[p.emphasis.type]||p.emphasis.type;
       h+=`<div class="hint">강조: ${tl} — "${esc(p.emphasis.phrase)}"</div>`;
@@ -1323,11 +1225,8 @@ function draftHTML(){
   return h;
 }
 
-// 복사 대상 id가 중복되지 않도록 미리보기는 항상 한 곳에만 그린다
-function renderOut(target){
-  target = target || $('out');
-  $('out').innerHTML=''; $('zoomBody').innerHTML='';
-  target.innerHTML=draftHTML();
+function renderOut(){
+  $('out').innerHTML=draftHTML();
   geocodeIfNeeded(); // 지도 위치가 없으면 주소로 찾아서 다시 그린다
 }
 
@@ -1368,20 +1267,31 @@ async function geocodeIfNeeded(){
   setStatus('📍 주소로 지도 위치를 찾아서 지도 그림을 넣었어. 근처 위치일 수 있으니 미리보기에서 확인해줘.');
 }
 
-$('zoomBtn').onclick=()=>{ if(!draft) return setStatus('먼저 초안을 만들거나 불러와줘.'); openOv('zoomOv'); renderOut($('zoomBody')); };
 
 // 여러 섹션을 숨은 영역에 모아 한 번에 복사한다.
 // 사진은 넣지 않는다: 스마트에디터가 HTML 속 이미지(data URL)를 "허용되지 않는 형식"으로 빼 버리기 때문
 // 본문 조각은 끝을 서식 없는 빈 줄로 닫는다: 형광펜 구간으로 끝나면 스마트에디터 커서가 형광펜 상태를 이어받아
 // 다음에 붙여넣는 글까지 전부 칠해진다(실사용 확인). 제목은 여기로 오지 않는다(「제목」 옆 복사로 빈 줄 없이)
+// parts: 미리보기 칸 id 또는 문자열 {text}(사진·지도 자리 표시 한 줄)
 function fillOffscreen(parts){
   const off=$('offscreen'); off.innerHTML='';
   const br=()=>{ off.appendChild(document.createElement('br')); off.appendChild(document.createElement('br')); };
-  const els=parts.map(id=>document.getElementById(id)).filter(Boolean);
-  els.forEach((el,i)=>{ if(i) br(); off.appendChild(el.cloneNode(true)); });
+  const els=parts.map(p=>{
+    if(typeof p==='object'){ const d=document.createElement('div'); d.textContent=p.text; d.isMark=true; return d; }
+    const el=document.getElementById(p); if(!el) return null;
+    const c=el.cloneNode(true);
+    c.querySelectorAll('.hint').forEach(n=>n.remove()); // 화면용 안내 글은 블로그에 안 들어가게
+    // 폰 블로그 앱은 붙여넣은 그림을 뺀다(2026-10-04 확인) → 지도 그림 대신 '장소' 버튼으로 넣을 자리 표시
+    if(p==='cp-map'&&IS_PHONE){ c.querySelectorAll('img').forEach(n=>(n.closest('a')||n).remove()); c.querySelectorAll('div').forEach(n=>{ if(!n.textContent.trim()) n.remove(); }); }
+    return c;
+  }).filter(Boolean);
+  // 자리 표시 줄은 바로 아래 글과 붙인다 (빈 줄 없이)
+  els.forEach((el,i)=>{ if(i&&!els[i-1].isMark) br(); off.appendChild(el); });
   if(els.length) br();
   return off;
 }
+// 블로그에서 사진을 넣을 자리 (미리보기 사진 칸 머리와 같은 글자)
+function photoMark(n){ return `[사진 ${n}${draft&&draft.thumbnail&&draft.thumbnail.index===n?' · 대표사진':''}]`; }
 // 복사가 끝나면 숨은 영역을 비운다 (cp-map 같은 id 사본이 남아 있으면 querySelector가 사본을 잡는다)
 function copyParts(parts,btn){ fillOffscreen(parts); return copyNode('offscreen',btn).then(ok=>{ $('offscreen').innerHTML=''; return ok; }); }
 // 도입부에 '🚗 위치 :' 줄이 이미 있으면(28life 등) 위쪽 위치 블록은 같은 내용이라 붙여넣기에서 뺀다
@@ -1412,14 +1322,13 @@ function mapUrl(d){
   const q=pl.naver_query||pl.name||'';
   return q?`https://map.naver.com/p/search/${encodeURIComponent(q)}`:'';
 }
-/* ---------- 에디터에 옮기기 = ① 📋 글 전체 복사 → ② 📷 사진 한 장씩 (폰은 📤 한꺼번에도) ---------- */
-// 📋 글 전체 복사: 본문 글 + 지도 그림. 제목은 에디터 맨 위 제목 칸에 따로(미리보기 「제목」 옆 복사)
+/* ---------- 에디터에 옮기기 = 🏷️ 제목 복사 → 📋 글 전체 복사 → 글 속 [사진 N] 자리에 사진 직접 넣기 ---------- */
+// 사진은 붙여넣기로 옮기지 않는다(2026-10-06 사용자 결정): PC는 한 장씩만 되고 폰 앱은 그림을 빼서 결국 직접 넣는 게 편했다
 $('copyAllBtn').onclick=e=>{
   if(!draft) return setStatus('먼저 초안을 만들거나 불러와줘.');
-  // 폰 블로그 앱은 붙여넣기에서 그림(지도 포함)을 빼므로 지도 그림·사진은 📤로 보내라고 안내
   copyParts(bodyParts(),e.currentTarget).then(ok=>{ if(ok) setStatus(IS_PHONE
-    ?'✅ 본문 글 전체를 복사했어 → 블로그 앱 본문을 길게 눌러 붙여넣기.\n제목은 🏷️ 제목 복사로 제목 칸에, 사진은 📤 사진 한꺼번에 보내기로 (블로그 앱은 붙여넣은 그림을 빼 버려서).'
-    :'✅ 본문 글 전체(지도 포함)를 복사했어 → 블로그 본문에 붙여넣기 (Ctrl+V).\n제목은 🏷️ 제목 복사로 제목 칸에, 사진은 📷 다음 사진 복사로 한 장씩 그 사진 글 근처에 붙여넣기.'); });
+    ?'✅ 본문 글 전체를 복사했어 → 블로그 앱 본문을 길게 눌러 붙여넣기.\n제목은 🏷️ 제목 복사로 제목 칸에. 글 속 [사진 N] 자리에 사진을 넣고, [지도] 자리는 앱의 「장소」 버튼으로. 자리 표시 글은 지우면 돼.'
+    :'✅ 본문 글 전체(지도 포함)를 복사했어 → 블로그 본문에 붙여넣기 (Ctrl+V).\n제목은 🏷️ 제목 복사로 제목 칸에. 글 속 [사진 N] 자리에 사진을 넣고 자리 표시 글은 지우면 돼.'); });
 };
 
 // 🏷️ 제목 복사: 미리보기 「제목」 옆 복사와 같다 (③ 아래 버튼 줄에 순서대로 두려고)
@@ -1428,63 +1337,16 @@ $('copyTitleBtn').onclick=e=>{
   copyNode('cp-title',e.currentTarget).then(ok=>{ if(ok) setStatus('🏷️ 제목 복사됨 → 에디터 맨 위 제목 칸에 붙여넣기. 다음은 📋 글 전체 복사.'); });
 };
 
-// 사진을 PNG로 클립보드에: 스마트에디터가 붙여넣기로 올려 주는 건 image/png 하나만 든 클립보드뿐 (paste-lab F)
-// 화면용 사진(긴 변 1280px)을 쓴다 — 원본을 PNG로 바꾸면 수십 MB가 된다
-function copyImage(src){
-  const CI=window.ClipboardItem, cb=navigator.clipboard;
-  if(!CI||!cb||!cb.write) return Promise.resolve(false);
-  const png=new Promise((res,rej)=>{ const im=new Image();
-    im.onload=()=>{ const c=document.createElement('canvas'); c.width=im.naturalWidth; c.height=im.naturalHeight; c.getContext('2d').drawImage(im,0,0); c.toBlob(b=>b?res(b):rej(),'image/png'); };
-    im.onerror=rej; im.src=src; });
-  png.catch(()=>{}); // 쓰기가 먼저 실패해도 처리 안 된 오류로 남지 않게
-  // Promise를 바로 넘겨야 클릭 직후(사용자 동작 안)에 쓰기가 시작돼서 Safari도 허용한다. 못 받는 브라우저는 다 만든 뒤에
-  try{ return cb.write([new CI({'image/png':png})]).then(()=>true,()=>false); }
-  catch(_){ return png.then(b=>cb.write([new CI({'image/png':b})])).then(()=>true,()=>false); }
-}
-// 사진 i(0부터)를 복사하고 📷 다음 사진은 그 다음으로
-function copyPhotoAt(i,btn){
-  const p=photos[i]; if(!p) return Promise.resolve(false);
-  const prev=photoNext; photoNext=i+1; updateBtns();
-  return copyImage(p.src).then(ok=>{
-    if(ok) setStatus(`📷 사진 ${i+1} 복사됨 → 블로그에서 그 사진 자리(사진 ${i+1} 글 근처)를 누르고 붙여넣기`);
-    else{
-      if(photoNext===i+1){ photoNext=prev; updateBtns(); } // 실패하면 순서를 되돌려 같은 사진을 다시 시도
-      setStatus('⚠️ 사진 복사가 안 됐어 (이 브라우저가 사진 복사를 막았을 수 있어).'+(SHARE_OK?' 📤 사진 한꺼번에 보내기를 써줘.':' 사진은 블로그에서 직접 올려줘.'));
-    }
-    if(btn){ const o=btn.textContent, t=ok?'복사됨 ✓':'복사 실패'; btn.textContent=t; setTimeout(()=>{ if(btn.textContent===t) btn.textContent=o; },1200); }
-    return ok;
-  });
-}
-$('nextPhotoBtn').onclick=()=>{ if(photos.length) copyPhotoAt(photoNext>=photos.length?0:photoNext); };
-
-// 📤 사진 한꺼번에 보내기 (폰만): 공유 창으로 네이버 블로그 앱에 ① 순서대로 (사용자 실험: 순서 유지). 글은 📋로 따로
-// PC는 공유 창이 블로그로 안 가므로 숨긴다
 const IS_PHONE=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-const SHARE_OK=(()=>{ try{ return IS_PHONE&&!!navigator.share&&!!navigator.canShare&&navigator.canShare({files:[new File(['x'],'t.jpg',{type:'image/jpeg'})]}); }catch(_){ return false; } })();
-$('sharePhotosBtn').hidden=!SHARE_OK;
-// 폰의 네이버 블로그 앱은 붙여넣기에서 그림을 전부 뺀다(사진 PNG·지도 그림 모두, 2026-10-04 사용자 확인) → 폰에서는 📷 한 장씩 복사를 숨기고 📤로
-document.documentElement.classList.toggle('phone',IS_PHONE);
-const PHOTO_EXT={'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif','image/heic':'heic','image/heif':'heif'};
-const photoExt=f=>PHOTO_EXT[f.type]||((f.name||'').match(/\.([a-z0-9]{2,5})$/i)||[,'jpg'])[1].toLowerCase();
-let shareSmall=false; // 원본이 커서 실패했으면 다음엔 화면용으로 줄인 사진(긴 변 1280px)으로
-$('sharePhotosBtn').onclick=()=>{
-  if(!photos.length) return setStatus('⚠️ 보낼 사진이 없어. ①에 사진을 먼저 올려줘.');
-  // 파일 이름에 못 쓰는 글자는 _로. 01처럼 0을 채워야 순서대로 정렬된다
-  const base=($('postName').value.trim()||$('placeHint').value.trim()).replace(/[\\/:*?"<>|\x00-\x1f]+/g,'_').replace(/[. ]+$/,'')||'blog';
-  const w=Math.max(2,String(photos.length).length);
-  const files=photos.map((p,i)=>{ const f=(shareSmall?null:p.file)||dataURLtoFile(p.src,'photo.jpg');
-    return new File([f],`${base}_${String(i+1).padStart(w,'0')}.${photoExt(f)}`,{type:f.type||'image/jpeg'}); });
-  const fail=()=>{ shareSmall=true; setStatus('⚠️ 사진을 보내지 못했어 (사진이 너무 크거나 많을 수 있어). 한 번 더 누르면 줄인 사진으로 보낼게.'); };
-  let pr;
-  try{ if(!navigator.canShare({files})) return fail(); pr=navigator.share({files}); }catch(err){ pr=Promise.reject(err); } // 공유 창은 클릭 안에서 바로 열어야 한다
-  const n=files.length;
-  pr.then(()=>{ shareSmall=false; setStatus(`✅ 사진 ${n}장을 순서대로 보냈어. 글은 📋 글 전체 복사로 붙여넣고, 사진은 블로그에서 원하는 자리로 옮기면 돼.`); })
-    .catch(err=>err&&err.name==='AbortError'?setStatus('공유를 취소했어.'):fail());
-};
 
+// 📋에 들어가는 순서: (위치 블록) 도입부 → 지도 → [사진 1] 사진 1 글 → … → 마무리 → 해시태그
 function bodyParts(){
   const parts=introParts();
-  (draft.photos||[]).forEach(p=>parts.push('cp-photo-'+p.index));
+  if(IS_PHONE&&document.getElementById('cp-map')){
+    const pl=draft.place||{}, name=String(pl.name||$('placeHint').value||'').trim();
+    parts.splice(parts.indexOf('cp-map'),0,{text:`[지도 · 블로그 앱 「장소」 버튼으로${name?` "${name}"`:''} 넣기]`});
+  }
+  (draft.photos||[]).forEach(p=>parts.push({text:photoMark(p.index)},'cp-photo-'+p.index));
   parts.push('cp-outro','cp-hashtags');
   return parts;
 }
@@ -1529,6 +1391,8 @@ let saveWarned=false;
 async function saveHistory(){
   clearTimeout(saveTimer); saveTimer=0;
   if(!draft&&!photos.length) return;
+  // 발행 완료한 글을 고치면 원본 기록은 남기고 새 기록으로 저장 (발행한 글이 다른 글로 덮어써지지 않게)
+  if(curDone){ curId=null; curDone=false; updateBtns(); setStatus('발행 완료한 글은 그대로 두고, 고친 내용은 🗂에 새 기록으로 저장할게.'); }
   // await 전에 지금 상태를 통째로 떠 둔다 (저장 도중에 화면이 바뀌어도 섞이지 않게)
   const id=curId||(curId=Date.now().toString(36)+Math.random().toString(36).slice(2,6));
   const form=Object.fromEntries(FORM_KEYS.map(k=>[k,$(k).value]));
@@ -1568,13 +1432,15 @@ async function renderHistory(){
   const q=$('histSearch').value.trim().toLowerCase();
   list=list.filter(x=>!q||(x.title+' '+x.place).toLowerCase().includes(q)).sort((a,b)=>b.updated-a.updated);
   if(!list.length){ box.innerHTML=`<p class="hint" style="margin-top:14px">${q?'검색 결과가 없어.':'아직 기록이 없어. 사진을 올리면 여기에 자동으로 쌓여.'}</p>`; return; }
-  const groups=new Map();
-  list.forEach(x=>{ const g=groupOf(x.updated); if(!groups.has(g)) groups.set(g,[]); groups.get(g).push(x); });
-  // 날짜 묶음은 <details>로 접고 펼친다 (메뉴 트리)
-  box.innerHTML=[...groups].map(([g,xs])=>`<details open><summary>${esc(g)} · ${xs.length}</summary>${xs.map(x=>{
+  const item=x=>{
     const img=/^data:image\//.test(x.thumb||'')?`<img src="${x.thumb}" alt="">`:'<span class="noimg">📝</span>';
-    return `<div class="hitem${x.id===curId?' cur':''}" data-id="${esc(x.id)}">${img}<div class="htext"><div class="ht">${esc(x.title)}</div><div class="hint">${esc(x.place)}${x.place?' · ':''}${timeLabel(x.updated)} · 사진 ${Number(x.count)||0}장</div></div><button class="hdel" title="기록 삭제" aria-label="기록 삭제">🗑</button></div>`;
-  }).join('')}</details>`).join('');
+    return `<div class="hitem${x.id===curId?' cur':''}" data-id="${esc(x.id)}">${img}<div class="htext"><div class="ht">${x.done?'✅ ':''}${esc(x.title)}</div><div class="hint">${esc(x.place)}${x.place?' · ':''}${timeLabel(x.updated)} · 사진 ${Number(x.count)||0}장</div></div><button class="hbtn hdone" title="${x.done?'작성 중으로 되돌리기':'블로그에 발행했으면 눌러줘 (발행 완료 묶음으로)'}" aria-label="${x.done?'작성 중으로 되돌리기':'발행 완료로 표시'}">${x.done?'↩️':'✅'}</button><button class="hbtn hsave" title="사진까지 파일 하나로 받기 (📂 파일 열기로 다시 열 수 있어)" aria-label="파일로 저장">💾</button><button class="hbtn hdel" title="기록 삭제" aria-label="기록 삭제">🗑</button></div>`;
+  };
+  // 작성 중인 글은 날짜 묶음(펼침), 발행 완료한 글은 맨 아래 한 묶음(접힘, 검색 중엔 펼침)
+  const groups=new Map(), done=list.filter(x=>x.done);
+  list.filter(x=>!x.done).forEach(x=>{ const g=groupOf(x.updated); if(!groups.has(g)) groups.set(g,[]); groups.get(g).push(x); });
+  box.innerHTML=[...groups].map(([g,xs])=>`<details open><summary>✏️ ${esc(g)} · ${xs.length}</summary>${xs.map(item).join('')}</details>`).join('')
+    +(done.length?`<details${q?' open':''}><summary>✅ 발행 완료 · ${done.length}</summary>${done.map(item).join('')}</details>`:'');
 }
 // data URL → File (다시 생성할 때 resize()가 File을 받으므로)
 function dataURLtoFile(u,name){
@@ -1586,19 +1452,29 @@ async function loadHistory(id){
   if(busy) return setStatus('⚠️ 지금 작업이 끝난 뒤에 불러와줘.');
   if(id===curId) return closeOv('histOv');
   await flushSave();
-  let r=null; try{ r=await idb('readonly',(m,s)=>s.get(id)); }catch(_){}
+  let r=null, meta=null; try{ [r,meta]=await Promise.all([idb('readonly',(m,s)=>s.get(id)),idb('readonly',m=>m.get(id))]); }catch(_){}
   if(!r) return setStatus('⚠️ 초안을 불러오지 못했어.');
   applyRecord(r,id);
+  curDone=!!(meta&&meta.done); updateBtns();
+}
+// ✅ 발행 완료 표시: 서랍에서 따로 묶이고, 이후에 고치면 그 글은 그대로 두고 새 기록으로 저장된다
+async function setDone(id,v){
+  if(id===curId) await flushSave(); // 지금 화면의 고친 내용을 먼저 저장 (표시 뒤 저장되면 새 기록으로 갈라지므로)
+  try{ await idb('readwrite',m=>{ const req=m.get(id); req.onsuccess=()=>{ if(req.result) m.put({...req.result,done:v}); }; return req; }); }
+  catch(_){ return setStatus('⚠️ 표시를 저장하지 못했어.'); }
+  if(id===curId) curDone=v;
+  renderHistory();
+  setStatus(v?'✅ 발행 완료로 표시했어. 🗂 내 초안의 「발행 완료」 묶음으로 옮겨져. 다음 글은 🆕 새 포스팅으로 시작해줘.':'↩️ 작성 중으로 되돌렸어.');
 }
 // 🗂 기록 하나(또는 같은 모양의 샘플 파일 {draft, form, photos})를 화면에 펼친다. id=null이면 새 기록으로 저장
 function applyRecord(r,id){
   photos=(r.photos||[]).map((p,i)=>({id:Date.now()+Math.random(),src:p.src,keyword:p.keyword,gps:p.gps,time:p.time,short:p.short,
-    file:dataURLtoFile(p.src,p.name||`photo-${i+1}.jpg`),sel:false}));
+    file:dataURLtoFile(p.src,p.name||`photo-${i+1}.jpg`)}));
   FORM_KEYS.forEach(k=>{ if(r.form&&typeof r.form[k]==='string') $(k).value=r.form[k];
     else if(['addrIn','parkIn','hoursIn'].includes(k)) $(k).value=''; }); // 위치 칸이 없던 옛 기록: 이전 초안의 위치가 남지 않게
   if(!(r.form&&r.form.postType)) $('postType').value='food'; // 종류가 생기기 전에 저장된 기록은 맛집으로
   updatePersona(); updateTypeUI(); saveForm();
-  curId=id; draft=r.draft?fixEmphasis(r.draft):null; dirty=false; photoNext=0; // draft=null: ✨ 생성 전에 저장된 기록
+  curId=id; curDone=false; draft=r.draft?fixEmphasis(r.draft):null; dirty=false; // draft=null: ✨ 생성 전에 저장된 기록
   renderGrid(); clearTimeout(saveTimer); saveTimer=0; // 불러오기만 했는데 '최근 수정'이 바뀌지 않게
   if(!id) saveHistory(); // 파일에서 연 것은 🗂 내 초안에 새로 남겨 다음엔 서랍에서 바로 연다
   if(draft) renderOut(); else $('out').innerHTML='';
@@ -1611,11 +1487,27 @@ async function delHistory(id){
   if(id===curId){ clearTimeout(saveTimer); saveTimer=0; curId=null; }
   renderHistory(); setStatus('✅ 기록을 지웠어.');
 }
+// 💾 글 하나를 사진까지 파일 하나({draft, form, photos})로 받는다. 📂 파일 열기로 그대로 되살린다 (백업·다른 기기로 옮기기)
+async function exportHistory(id){
+  if(id===curId) await flushSave();
+  let r=null, meta=null; try{ [r,meta]=await Promise.all([idb('readonly',(m,s)=>s.get(id)),idb('readonly',m=>m.get(id))]); }catch(_){}
+  if(!r) return setStatus('⚠️ 기록을 읽지 못했어.');
+  const name=String((meta&&meta.title)||'초안').replace(/[\/:*?"<>|]+/g,'_').replace(/[. ]+$/,'').slice(0,40)||'초안';
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify({draft:r.draft,form:r.form,photos:r.photos})],{type:'application/json'}));
+  a.download=name+'.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),30000); // 바로 해제하면 모바일에서 다운로드가 끊긴다
+  setStatus('💾 「'+name+'」을 파일로 받았어 (다운로드 폴더). 🗂 → 📂 파일 열기로 사진까지 다시 열 수 있어.');
+}
 $('histBtn').onclick=async ()=>{ await flushSave(); $('histSearch').value=''; await renderHistory(); openOv('histOv'); };
 $('histSearch').oninput=renderHistory;
 $('histList').onclick=e=>{
   const it=e.target.closest('.hitem'); if(!it) return;
-  if(e.target.closest('.hdel')) delHistory(it.dataset.id); else loadHistory(it.dataset.id);
+  const id=it.dataset.id;
+  if(e.target.closest('.hdel')) delHistory(id);
+  else if(e.target.closest('.hdone')) setDone(id,e.target.closest('.hdone').textContent==='✅');
+  else if(e.target.closest('.hsave')) exportHistory(id);
+  else loadHistory(id);
 };
 $('histNew').onclick=()=>{ closeOv('histOv'); $('resetAllBtn').click(); };
 $('histClear').onclick=async ()=>{
@@ -1632,7 +1524,7 @@ let tabCh=null;
 function onTabMsg(m){
   if(!m||m.from===TAB_ID||m.t!=='claim'||$('dupOv').classList.contains('show')) return;
   flushSave(); // 잠그기 전에 이 창의 초안을 🗂 내 초안에 저장
-  ['photoOv','zoomOv','histOv','setOv','personaOv'].forEach(id=>$(id).classList.contains('show')&&closeOv(id));
+  ['photoOv','histOv','setOv','personaOv'].forEach(id=>$(id).classList.contains('show')&&closeOv(id));
   openOv('dupOv');
 }
 function sendTab(m){
