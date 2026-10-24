@@ -414,7 +414,6 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;b
         <button id="draftOpen" style="flex:1" title="💾 파일로 저장해 둔 draft.json 열기">📂 파일 열기</button>
       </div>
       <input type="file" id="draftIn" accept="application/json,.json" style="display:none">
-      <input type="text" id="histSearch" placeholder="제목·장소 검색" style="margin-top:10px">
       <div id="histList"></div>
       <div class="hist-foot">
         <span class="hint">사진을 올리면 자동 저장돼. 이 브라우저에만 남고 파일엔 안 들어가.</span>
@@ -527,8 +526,9 @@ async function resize(file, max=1280){
 
 async function addFiles(files){
   const imgs=files.filter(f=>f.type.startsWith('image/')||/\.(jpe?g|png|heic|heif)$/i.test(f.name));
-  if(!imgs.length) return;
+  if(!imgs.length) return 0;
   setStatus(`사진 ${imgs.length}장 불러오는 중...`);
+  let n=0;
   for(const f of imgs){
     try{
       const src=await resize(f);
@@ -543,10 +543,11 @@ async function addFiles(files){
           short=`${z(dt.getFullYear()%100)}.${z(dt.getMonth()+1)}.${z(dt.getDate())} ${z(dt.getHours())}:${z(dt.getMinutes())}`;
         } } }catch(_){}
       // crypto.randomUUID는 https/localhost에서만 있어서 모바일 file:// 등에서 깨진다
-      photos.push({id:Date.now()+Math.random(),src,keyword:'',gps,time,short,file:f});
+      photos.push({id:Date.now()+Math.random(),src,keyword:'',gps,time,short,file:f}); n++;
     }catch(err){ alert(f.name+' 을(를) 못 읽었어. HEIC면 JPG로 바꿔서 올려줘.'); }
   }
   setStatus(''); renderGrid();
+  return n;
 }
 
 $('fileIn').onchange = async e=>{ await addFiles([...e.target.files]); e.target.value=''; };
@@ -558,8 +559,8 @@ document.addEventListener('paste', async e=>{
   const files=[...(e.clipboardData&&e.clipboardData.files||[])].filter(f=>f.type.startsWith('image/'));
   if(!files.length||$('dupOv').classList.contains('show')) return; // 잠긴 창에는 사진을 넣지 않는다
   e.preventDefault();
-  await addFiles(files.map((f,i)=>new File([f],`붙여넣기-${Date.now()}-${i+1}.${f.type.split('/')[1]||'png'}`,{type:f.type})));
-  setStatus(`✅ 사진 ${files.length}장 붙여넣었어.`);
+  const n=await addFiles(files.map((f,i)=>new File([f],`붙여넣기-${Date.now()}-${i+1}.${f.type.split('/')[1]||'png'}`,{type:f.type})));
+  if(n) setStatus(`✅ 사진 ${n}장 붙여넣었어.`);
 });
 
 // ① 사진 컬럼 전체를 드롭 영역으로 쓴다 (작은 점선 박스 말고)
@@ -617,7 +618,7 @@ function renderGrid(){
       </div>`;
 
     d.querySelector('.meta input').oninput=ev=>{ p.keyword=ev.target.value; scheduleSave(); };
-    d.querySelector('.x').onclick=()=>{ photos.splice(i,1); renderGrid(); };
+    d.querySelector('.x').onclick=()=>photosEdit(()=>photos.splice(i,1));
     d.querySelector('img').onclick=()=>openPhoto(i);
     d.querySelectorAll('.mv').forEach(b=>b.onclick=()=>movePhoto(i,i+Number(b.dataset.d)));
 
@@ -643,7 +644,21 @@ function renderGrid(){
 
 function movePhoto(from,to){
   if(to<0||to>=photos.length) return renderGrid();
-  const [m]=photos.splice(from,1); photos.splice(to,0,m); renderGrid();
+  photosEdit(()=>{ const [m]=photos.splice(from,1); photos.splice(to,0,m); });
+}
+// 사진을 지우거나 옮긴 뒤: 초안의 사진 번호(photos[].index·thumbnail)를 새 순서에 맞추고, 지운 사진의 글은 뺀다
+// (번호가 그대로면 [사진 N] 자리와 미리보기 사진이 다른 사진을 가리킨다)
+function photosEdit(change){
+  const before=photos.map(p=>p.id);
+  change();
+  if(draft){
+    const at=new Map(photos.map((p,i)=>[p.id,i+1]));
+    const to=n=>at.get(before[n-1]);
+    draft.photos=(draft.photos||[]).filter(x=>to(x.index)).map(x=>({...x,index:to(x.index)})).sort((a,b)=>a.index-b.index);
+    if(draft.thumbnail) draft.thumbnail.index=to(draft.thumbnail.index)||1;
+    dirty=true; renderOut();
+  }
+  renderGrid();
 }
 
 
@@ -668,7 +683,7 @@ $('ovKeyword').oninput=e=>{
 };
 $('ovPrev').onclick=()=>{ if(ovIndex>0){ movePhoto(ovIndex,ovIndex-1); openPhoto(ovIndex-1); } };
 $('ovNext').onclick=()=>{ if(ovIndex<photos.length-1){ movePhoto(ovIndex,ovIndex+1); openPhoto(ovIndex+1); } };
-$('ovDel').onclick=()=>{ if(ovIndex<0) return; photos.splice(ovIndex,1); renderGrid(); closeOv('photoOv'); };
+$('ovDel').onclick=()=>{ if(ovIndex<0) return; const i=ovIndex; photosEdit(()=>photos.splice(i,1)); closeOv('photoOv'); };
 
 /* ---------- ⚙️ 설정 (모든 초안 공통, localStorage 'blogSettings') ---------- */
 // keyMode: none=메모리만 / tab=sessionStorage(탭 닫으면 삭제) / local=localStorage(계속)
@@ -757,7 +772,7 @@ function fixEmphasis(d){
     if(!p.emphasis||p.emphasis.type==='none') p.emphasis={type:null,phrase:''};
     // 문장 대부분을 강조하면 붙여넣었을 때 글 전체에 형광펜을 칠한 것처럼 보인다 → 짧은 구절만 강조로 인정
     const ph=String(p.emphasis.phrase||''), tx=String(p.text||'');
-    if(p.emphasis.type&&(ph.length>20||ph.length>tx.length*0.6)) p.emphasis={type:null,phrase:''};
+    if(p.emphasis.type&&(ph.length>20||ph.length>tx.length*0.6||!tx.includes(ph))) p.emphasis={type:null,phrase:''};
   });
   if(d.thumbnail) d.thumbnail.index=parseInt(d.thumbnail.index,10)||1;
   return d;
@@ -876,15 +891,16 @@ function updateBtns(){
 $('genBtn').onclick=async ()=>{
   if(busy) return;
   if(!photos.length) return setStatus('⚠️ 사진을 먼저 올려줘.');
+  const seq=postSeq;
   setBusy(true,'genBtn');
   let autoWand='';
   try{
     setStatus('사진 준비 중...');
+    // 토큰 절약: 이미지 토큰은 픽셀 수에 비례 → API에는 긴 변 1024px로 보낸다. 사진마다 한 번만 만들어 두고(다시 생성할 때 재사용), 여러 장은 한꺼번에
+    const apiImgs=await Promise.all(photos.map(async p=>p.api||(p.api=(await resize(p.file,1024)).split(',')[1])));
     const content=[];
     for(let i=0;i<photos.length;i++){
-      const p=photos[i];
-      // 토큰 절약: 이미지 토큰은 픽셀 수에 비례 → API에는 긴 변 1024px로 보낸다
-      const data=(await resize(p.file,1024)).split(',')[1];
+      const p=photos[i], data=apiImgs[i];
       const bits=[`[사진 ${i+1}] 키워드: ${p.keyword||'(없음)'}`];
       if(p.gps) bits.push(`GPS: ${p.gps.lat}, ${p.gps.lng}`);
       if(p.time) bits.push(`촬영: ${p.time}`);
@@ -909,6 +925,7 @@ $('genBtn').onclick=async ()=>{
       ],
       messages:[{role:'user',content}]
     });
+    if(seq!==postSeq){ setStatus('🆕 새 포스팅을 시작해서, 방금 끝난 초안은 화면에 넣지 않았어.'); return; } // 빈 새 포스팅에 이전 글이 덮어씌워지지 않게
     const d=findJSON(textOf(j));
     if(!d) throw new Error('Claude 응답을 읽지 못했어. 다시 눌러줘.');
     draft=fixEmphasis(d); dirty=true;
@@ -1055,7 +1072,8 @@ function updateDraftLabel(){
   $('draftLabel').textContent='— '+(t.length>24?t.slice(0,24)+'…':t);
 }
 
-function clearDraft(){ flushSave(); draft=null; dirty=false; curId=null; curDone=false; $('out').innerHTML=''; updateDraftLabel(); }
+let postSeq=0; // 🆕 새 포스팅마다 +1 — 생성이 끝났을 때 다른 포스팅이면 그 초안은 버린다
+function clearDraft(){ postSeq++; flushSave(); draft=null; dirty=false; curId=null; curDone=false; $('out').innerHTML=''; updateDraftLabel(); }
 
 $('resetAllBtn').onclick=()=>{
   const had=!!(draft||photos.length); // 초안 생성 전이라도 사진이 있으면 🗂에 저장돼 있다
@@ -1254,20 +1272,21 @@ async function geocodeIfNeeded(){
   if(!addr||geoTried.has(addr)) return;
   geoTried.add(addr);
   const d0=draft;
-  let hit=geoCache()[addr];
+  let hit=geoCache()[addr], offline=false;
   if(!hit){
     for(const q of geoQueries(addr)){
       try{
         const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(q)}`);
         const j=r.ok?await r.json():[];
         if(j[0]){ const lat=+j[0].lat, lng=+j[0].lon; if(okLat(lat)&&okLng(lng)){ hit={lat,lng,q}; break; } }
-      }catch(_){ break; } // 인터넷이 안 되면 그만
+      }catch(_){ offline=true; break; } // 인터넷이 안 되면 그만
     }
+    if(offline&&!hit){ geoTried.delete(addr); return; } // 연결이 돌아오면 다음 미리보기 때 다시 찾는다
     if(hit) try{ const c=geoCache(); c[addr]=hit; localStorage.setItem('blogGeoCache',JSON.stringify(c)); }catch(_){}
   }
   if(!hit||draft!==d0||placeCoords(draft)) return;
   draft.place=draft.place||{}; draft.place.lat=hit.lat; draft.place.lng=hit.lng; draft.place.geo='address';
-  renderOut(); scheduleSave();
+  renderOut(); if(!curDone) scheduleSave(); // 발행 완료 글은 지도 위치만 화면에 (저장하면 새 기록으로 갈라진다)
   setStatus('📍 주소로 지도 위치를 찾아서 지도 그림을 넣었어. 근처 위치일 수 있으니 미리보기에서 확인해줘.');
 }
 
@@ -1361,8 +1380,12 @@ function bodyParts(){
 let dbP=null;
 function db(){
   return dbP||(dbP=new Promise((res,rej)=>{
-    const r=indexedDB.open('blogDrafts',1);
-    r.onupgradeneeded=()=>{ r.result.createObjectStore('meta',{keyPath:'id'}); r.result.createObjectStore('data',{keyPath:'id'}); };
+    // v2: 사진(src 등)은 photos 저장소로 분리. v1 기록은 data에 사진이 그대로 있어서 readRecord가 둘 다 읽는다
+    const r=indexedDB.open('blogDrafts',2);
+    r.onupgradeneeded=()=>{ const d=r.result, has=n=>d.objectStoreNames.contains(n);
+      if(!has('meta')) d.createObjectStore('meta',{keyPath:'id'});
+      if(!has('data')) d.createObjectStore('data',{keyPath:'id'});
+      if(!has('photos')) d.createObjectStore('photos',{keyPath:'id'}); };
     r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
   }));
 }
@@ -1370,20 +1393,29 @@ function db(){
 async function idb(mode,fn){
   const d=await db();
   return new Promise((res,rej)=>{
-    const t=d.transaction(['meta','data'],mode);
-    const req=fn(t.objectStore('meta'),t.objectStore('data'));
+    const t=d.transaction(['meta','data','photos'],mode);
+    const req=fn(t.objectStore('meta'),t.objectStore('data'),t.objectStore('photos'));
     t.oncomplete=()=>res(req&&req.result); t.onerror=t.onabort=()=>rej(t.error);
   });
 }
-const thumbCache=new Map();
+// 기록 하나를 {draft, form, photos:[{src,keyword,…}]} 모양으로 읽는다 (v1은 data.photos, v2는 photos 저장소 + data.keywords)
+async function readRecord(id){
+  const [r,ph]=await Promise.all([idb('readonly',(m,s)=>s.get(id)),idb('readonly',(m,s,p)=>p.get(id))]);
+  if(!r) return null;
+  if(Array.isArray(r.photos)) return r;
+  const kw=r.keywords||[];
+  return {...r,photos:((ph&&ph.list)||[]).map((x,i)=>({...x,keyword:kw[i]||''}))};
+}
+// 목록용 작은 썸네일은 마지막 하나만 기억한다 (사진 data URL을 키로 계속 쌓으면 메모리가 늘어난다)
+let lastThumb={src:null,t:''};
 function thumbOf(src){
   if(!src) return Promise.resolve('');
-  if(thumbCache.has(src)) return Promise.resolve(thumbCache.get(src));
+  if(lastThumb.src===src) return Promise.resolve(lastThumb.t);
   return new Promise(r=>{
     const im=new Image();
     im.onload=()=>{ const s=96/Math.max(im.width,im.height), c=document.createElement('canvas');
       c.width=Math.round(im.width*s); c.height=Math.round(im.height*s); c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-      const t=c.toDataURL('image/jpeg',.7); thumbCache.set(src,t); r(t); };
+      const t=c.toDataURL('image/jpeg',.7); lastThumb={src,t}; r(t); };
     im.onerror=()=>r(''); im.src=src;
   });
 }
@@ -1392,6 +1424,7 @@ function scheduleSave(){ if(!draft&&!photos.length) return; clearTimeout(saveTim
 // 예약된 저장이 있으면 지금 바로 한다 (다른 초안으로 넘어가기 전에)
 function flushSave(){ if(saveTimer){ clearTimeout(saveTimer); saveTimer=0; return saveHistory(); } return Promise.resolve(); }
 let saveWarned=false;
+let savedPhotos={id:null,sig:''}; // 마지막으로 photos 저장소에 쓴 기록 id와 사진 목록
 async function saveHistory(){
   clearTimeout(saveTimer); saveTimer=0;
   if(!draft&&!photos.length) return;
@@ -1401,14 +1434,19 @@ async function saveHistory(){
   const id=curId||(curId=Date.now().toString(36)+Math.random().toString(36).slice(2,6));
   const form=Object.fromEntries(FORM_KEYS.map(k=>[k,$(k).value]));
   const d=draft?JSON.parse(JSON.stringify(draft)):{title:'📝 초안 생성 전'+(form.placeHint?' · '+form.placeHint:'')};
-  const ps=photos.map(p=>({src:p.src,keyword:p.keyword||'',gps:p.gps||null,time:p.time||null,short:p.short||'',name:(p.file&&p.file.name)||''}));
+  const keywords=photos.map(p=>p.keyword||'');
+  // 사진 목록이 마지막 저장 때와 같으면(키워드·글만 고친 경우) 사진은 다시 쓰지 않는다
+  const sig=photos.map(p=>p.id).join('|'), writePhotos=savedPhotos.id!==id||savedPhotos.sig!==sig;
+  const ps=writePhotos?photos.map(p=>({src:p.src,gps:p.gps||null,time:p.time||null,short:p.short||'',name:(p.file&&p.file.name)||''})):null;
   const ti=Math.max(0,((d.thumbnail&&d.thumbnail.index)||1)-1);
   try{
-    const thumb=await thumbOf((ps[ti]||ps[0]||{}).src);
-    await idb('readwrite',(m,s)=>{
-      m.put({id,updated:Date.now(),title:String(d.title||'제목 없음'),place:form.placeHint||(d.place&&d.place.name)||'',count:ps.length,thumb});
-      s.put({id,draft:draft?d:null,form,photos:ps});
+    const thumb=await thumbOf((photos[ti]||photos[0]||{}).src);
+    await idb('readwrite',(m,s,p)=>{
+      m.put({id,updated:Date.now(),title:String(d.title||'제목 없음'),place:form.placeHint||(d.place&&d.place.name)||'',count:keywords.length,thumb,done:false});
+      s.put({id,draft:draft?d:null,form,keywords});
+      if(ps) p.put({id,list:ps});
     });
+    savedPhotos={id,sig};
     if($('histOv').classList.contains('show')) renderHistory();
   }catch(err){
     // 개인정보 보호 모드 등에서는 저장이 막힌다. 매번 알리면 시끄러우니 한 번만
@@ -1433,18 +1471,17 @@ async function renderHistory(){
   let list;
   try{ list=await idb('readonly',m=>m.getAll()); }
   catch(_){ box.innerHTML='<p class="hint" style="margin-top:14px">이 브라우저에서는 초안 기록을 쓸 수 없어 (개인정보 보호 모드 등).</p>'; return; }
-  const q=$('histSearch').value.trim().toLowerCase();
-  list=list.filter(x=>!q||(x.title+' '+x.place).toLowerCase().includes(q)).sort((a,b)=>b.updated-a.updated);
-  if(!list.length){ box.innerHTML=`<p class="hint" style="margin-top:14px">${q?'검색 결과가 없어.':'아직 기록이 없어. 사진을 올리면 여기에 자동으로 쌓여.'}</p>`; return; }
+  list.sort((a,b)=>b.updated-a.updated);
+  if(!list.length){ box.innerHTML='<p class="hint" style="margin-top:14px">아직 기록이 없어. 사진을 올리면 여기에 자동으로 쌓여.</p>'; return; }
   const item=x=>{
     const img=/^data:image\//.test(x.thumb||'')?`<img src="${x.thumb}" alt="">`:'<span class="noimg">📝</span>';
     return `<div class="hitem${x.id===curId?' cur':''}" data-id="${esc(x.id)}">${img}<div class="htext"><div class="ht">${x.done?'✅ ':''}${esc(x.title)}</div><div class="hint">${esc(x.place)}${x.place?' · ':''}${timeLabel(x.updated)} · 사진 ${Number(x.count)||0}장</div></div><button class="hbtn hdone" title="${x.done?'작성 중으로 되돌리기':'블로그에 발행했으면 눌러줘 (발행 완료 묶음으로)'}" aria-label="${x.done?'작성 중으로 되돌리기':'발행 완료로 표시'}">${x.done?'↩️':'✅'}</button><button class="hbtn hsave" title="사진까지 파일 하나로 받기 (📂 파일 열기로 다시 열 수 있어)" aria-label="파일로 저장">💾</button><button class="hbtn hdel" title="기록 삭제" aria-label="기록 삭제">🗑</button></div>`;
   };
-  // 작성 중인 글은 날짜 묶음(펼침), 발행 완료한 글은 맨 아래 한 묶음(접힘, 검색 중엔 펼침)
+  // 작성 중인 글은 날짜 묶음(펼침), 발행 완료한 글은 맨 아래 한 묶음(접힘)
   const groups=new Map(), done=list.filter(x=>x.done);
   list.filter(x=>!x.done).forEach(x=>{ const g=groupOf(x.updated); if(!groups.has(g)) groups.set(g,[]); groups.get(g).push(x); });
   box.innerHTML=[...groups].map(([g,xs])=>`<details open><summary>✏️ ${esc(g)} · ${xs.length}</summary>${xs.map(item).join('')}</details>`).join('')
-    +(done.length?`<details${q?' open':''}><summary>✅ 발행 완료 · ${done.length}</summary>${done.map(item).join('')}</details>`:'');
+    +(done.length?`<details><summary>✅ 발행 완료 · ${done.length}</summary>${done.map(item).join('')}</details>`:'');
 }
 // data URL → File (다시 생성할 때 resize()가 File을 받으므로)
 function dataURLtoFile(u,name){
@@ -1456,10 +1493,9 @@ async function loadHistory(id){
   if(busy) return setStatus('⚠️ 지금 작업이 끝난 뒤에 불러와줘.');
   if(id===curId) return closeOv('histOv');
   await flushSave();
-  let r=null, meta=null; try{ [r,meta]=await Promise.all([idb('readonly',(m,s)=>s.get(id)),idb('readonly',m=>m.get(id))]); }catch(_){}
+  let r=null, meta=null; try{ [r,meta]=await Promise.all([readRecord(id),idb('readonly',m=>m.get(id))]); }catch(_){}
   if(!r) return setStatus('⚠️ 초안을 불러오지 못했어.');
-  applyRecord(r,id);
-  curDone=!!(meta&&meta.done); updateBtns();
+  applyRecord(r,id,!!(meta&&meta.done));
 }
 // ✅ 발행 완료 표시: 서랍에서 따로 묶이고, 이후에 고치면 그 글은 그대로 두고 새 기록으로 저장된다
 async function setDone(id,v){
@@ -1471,14 +1507,16 @@ async function setDone(id,v){
   setStatus(v?'✅ 발행 완료로 표시했어. 🗂 내 초안의 「발행 완료」 묶음으로 옮겨져. 다음 글은 🆕 새 포스팅으로 시작해줘.':'↩️ 작성 중으로 되돌렸어.');
 }
 // 🗂 기록 하나(또는 같은 모양의 샘플 파일 {draft, form, photos})를 화면에 펼친다. id=null이면 새 기록으로 저장
-function applyRecord(r,id){
+function applyRecord(r,id,done){
   photos=(r.photos||[]).map((p,i)=>({id:Date.now()+Math.random(),src:p.src,keyword:p.keyword,gps:p.gps,time:p.time,short:p.short,
     file:dataURLtoFile(p.src,p.name||`photo-${i+1}.jpg`)}));
   FORM_KEYS.forEach(k=>{ if(r.form&&typeof r.form[k]==='string') $(k).value=r.form[k];
     else if(['addrIn','parkIn','hoursIn'].includes(k)) $(k).value=''; }); // 위치 칸이 없던 옛 기록: 이전 초안의 위치가 남지 않게
-  if(!(r.form&&r.form.postType)) $('postType').value='food'; // 종류가 생기기 전에 저장된 기록은 맛집으로
+  // 종류가 생기기 전 기록이나 목록에 없는 값이면 기본값으로 (빈 선택칸이 되지 않게)
+  if(!$('postType').value) $('postType').value='food';
+  if(!$('persona').value) $('persona').value='28life';
   updatePersona(); updateTypeUI(); saveForm();
-  curId=id; curDone=false; draft=r.draft?fixEmphasis(r.draft):null; dirty=false; // draft=null: ✨ 생성 전에 저장된 기록
+  curId=id; curDone=!!done; draft=r.draft?fixEmphasis(r.draft):null; dirty=false; // draft=null: ✨ 생성 전에 저장된 기록
   renderGrid(); clearTimeout(saveTimer); saveTimer=0; // 불러오기만 했는데 '최근 수정'이 바뀌지 않게
   if(!id) saveHistory(); // 파일에서 연 것은 🗂 내 초안에 새로 남겨 다음엔 서랍에서 바로 연다
   if(draft) renderOut(); else $('out').innerHTML='';
@@ -1487,14 +1525,14 @@ function applyRecord(r,id){
 }
 async function delHistory(id){
   if(!confirm('이 초안 기록을 지울까? 되돌릴 수 없어.')) return;
-  try{ await idb('readwrite',(m,s)=>{ m.delete(id); s.delete(id); }); }catch(_){}
+  try{ await idb('readwrite',(m,s,p)=>{ m.delete(id); s.delete(id); p.delete(id); }); }catch(_){}
   if(id===curId){ clearTimeout(saveTimer); saveTimer=0; curId=null; }
   renderHistory(); setStatus('✅ 기록을 지웠어.');
 }
 // 💾 글 하나를 사진까지 파일 하나({draft, form, photos})로 받는다. 📂 파일 열기로 그대로 되살린다 (백업·다른 기기로 옮기기)
 async function exportHistory(id){
   if(id===curId) await flushSave();
-  let r=null, meta=null; try{ [r,meta]=await Promise.all([idb('readonly',(m,s)=>s.get(id)),idb('readonly',m=>m.get(id))]); }catch(_){}
+  let r=null, meta=null; try{ [r,meta]=await Promise.all([readRecord(id),idb('readonly',m=>m.get(id))]); }catch(_){}
   if(!r) return setStatus('⚠️ 기록을 읽지 못했어.');
   const name=String((meta&&meta.title)||'초안').replace(/[\/:*?"<>|]+/g,'_').replace(/[. ]+$/,'').slice(0,40)||'초안';
   const a=document.createElement('a');
@@ -1503,8 +1541,7 @@ async function exportHistory(id){
   setTimeout(()=>URL.revokeObjectURL(a.href),30000); // 바로 해제하면 모바일에서 다운로드가 끊긴다
   setStatus('💾 「'+name+'」을 파일로 받았어 (다운로드 폴더). 🗂 → 📂 파일 열기로 사진까지 다시 열 수 있어.');
 }
-$('histBtn').onclick=async ()=>{ await flushSave(); $('histSearch').value=''; await renderHistory(); openOv('histOv'); };
-$('histSearch').oninput=renderHistory;
+$('histBtn').onclick=async ()=>{ await flushSave(); await renderHistory(); openOv('histOv'); };
 $('histList').onclick=e=>{
   const it=e.target.closest('.hitem'); if(!it) return;
   const id=it.dataset.id;
@@ -1516,7 +1553,7 @@ $('histList').onclick=e=>{
 $('histNew').onclick=()=>{ closeOv('histOv'); $('resetAllBtn').click(); };
 $('histClear').onclick=async ()=>{
   if(!confirm('🗂 내 초안 기록을 전부 지울까? 되돌릴 수 없어.')) return;
-  try{ await idb('readwrite',(m,s)=>{ m.clear(); s.clear(); }); }catch(_){}
+  try{ await idb('readwrite',(m,s,p)=>{ m.clear(); s.clear(); p.clear(); }); }catch(_){}
   clearTimeout(saveTimer); saveTimer=0; curId=null;
   renderHistory(); setStatus('✅ 기록을 모두 지웠어.');
 };
