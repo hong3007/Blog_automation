@@ -19,8 +19,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <script>
-// 아이폰 홈 화면 앱은 기본 시작 화면이 하얗게만 나와서, 그때만 짧은 시작 화면을 보여 준다 (안드로이드는 설치 정보로 자동)
-if(navigator.standalone===true) document.documentElement.classList.add('splash');
+// 설치한 앱으로 열 때만(PC·안드로이드·아이폰) 시작 화면을 보여 준다. 브라우저 탭으로 열 때는 바로 작업 화면
+// (안드로이드 시스템 시작 화면은 manifest 배경색을 같은 초록으로 맞춰서 이 화면으로 끊김 없이 이어진다)
+if(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches) document.documentElement.classList.add('splash');
 if(location.protocol==='https:'){ const l=document.createElement('link'); l.rel='manifest'; l.href='manifest.webmanifest'; document.head.appendChild(l); }
 </script>
 <!-- API 키가 들어 있는 페이지라 외부 CDN 대신 로컬 파일을 쓴다 -->
@@ -263,17 +264,25 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;b
   .drawer .modal{max-width:88%}
   .overlay{padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
 }
-/* ---------- 아이폰 홈 화면 앱 시작 화면 (html.splash일 때만) ---------- */
+/* ---------- 설치 앱 시작 화면 (html.splash일 때만): 초록 바탕 + 흰 카드 속 📸 + AutoBlog ---------- */
 #splash{display:none}
-html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#fff;transition:opacity .35s}
-#splash img{width:96px;height:96px;border-radius:22px;box-shadow:0 8px 24px rgba(3,199,90,.25)}
-#splash b{font-size:22px;color:#191f28;letter-spacing:-.02em}
+html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#03c75a;color:#fff;transition:opacity .3s;padding:env(safe-area-inset-top) 16px env(safe-area-inset-bottom)}
+#splash .card{width:112px;height:112px;border-radius:30px;background:#fff;display:grid;place-items:center;font-size:58px;line-height:1;box-shadow:0 14px 34px rgba(0,60,25,.25);margin-bottom:12px;animation:splashIn .45s cubic-bezier(.2,.9,.3,1.2) both}
+#splash b{font-size:28px;font-weight:800;letter-spacing:-.02em;animation:splashUp .45s .08s both}
+#splash small{font-size:14px;opacity:.85;animation:splashUp .45s .14s both}
+#splash .dots{display:flex;gap:6px;margin-top:22px}
+#splash .dots i{width:6px;height:6px;border-radius:50%;background:#fff;opacity:.4;animation:splashDot .9s infinite}
+#splash .dots i:nth-child(2){animation-delay:.15s}
+#splash .dots i:nth-child(3){animation-delay:.3s}
 #splash.hide{opacity:0;pointer-events:none}
+@keyframes splashIn{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:none}}
+@keyframes splashUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes splashDot{50%{opacity:1;transform:translateY(-3px)}}
+@media (prefers-reduced-motion:reduce){#splash *{animation:none!important}}
 </style>
 </head>
 <body>
-<div id="splash" aria-hidden="true"><img alt=""><b>AutoBlog</b></div>
-<script>document.querySelector('#splash img').src=document.querySelector('link[rel="apple-touch-icon"]').href; // 탭 아이콘과 같은 그림</script>
+<div id="splash" aria-hidden="true"><div class="card">📸</div><b>AutoBlog</b><small>사진만 올리면 블로그 초안 완성</small><div class="dots"><i></i><i></i><i></i></div></div>
 <div class="app">
 
 <div class="topbar">
@@ -1397,8 +1406,8 @@ $('copyTitleBtn').onclick=e=>{
 const IS_PHONE=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
 /* ---------- 앱 설치(PWA) ---------- */
-// 시작 화면(아이폰 홈 화면 앱만)은 화면이 다 그려진 뒤 잠깐 보여 주고 부드럽게 사라진다
-if(document.documentElement.classList.contains('splash')) setTimeout(()=>{ $('splash').classList.add('hide'); setTimeout(()=>document.documentElement.classList.remove('splash'),400); },600);
+// 시작 화면(설치 앱으로 열 때만)은 0.8초 보여 주고 부드럽게 사라진다
+if(document.documentElement.classList.contains('splash')) setTimeout(()=>{ $('splash').classList.add('hide'); setTimeout(()=>document.documentElement.classList.remove('splash'),350); },800);
 
 // 📋에 들어가는 순서: (위치 블록) 도입부 → 지도 → [사진 1] 사진 1 글 → … → 마무리 → 해시태그
 function bodyParts(){
