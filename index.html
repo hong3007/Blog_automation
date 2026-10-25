@@ -353,7 +353,7 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;b
       <img class="big" id="ovImg">
       <div class="tiny hint" id="ovMeta" style="margin-top:8px"></div>
       <label>느낌 / 키워드</label>
-      <input type="text" id="ovKeyword" placeholder="예: 뷰 최고, 웨이팅 40분">
+      <input type="text" id="ovKeyword" placeholder="예: 곱창구이 시킴, 고소함, 웨이팅 20분">
       <div class="row" style="margin-top:10px">
         <button id="ovPrev">◀ 앞으로 이동</button>
         <button id="ovNext">뒤로 이동 ▶</button>
@@ -488,10 +488,10 @@ $('personaHelp').onclick=()=>{ $('personaFull').innerHTML=Object.values(PERSONA_
 
 /* ---------- 포스팅 종류 (28 life 전체 글 85개 분석으로 정함) ---------- */
 const TYPE_DESC={
-  food:'🚗 위치 / 🅿️ 주차 / ✔️ 영업 시간 → 외관 → 메뉴판(가격) → 내부 → 음식 → 총평',
+  food:'🚗 위치 / 🅿️ 주차 / ✔️ 영업 시간 → 외관 → 시킨 메뉴 → 내부 → 음식 → 총평',
   cafe:'🚗 위치 / 🅿️ 주차 / ✔️ 운영 시간 → 외관·정원 → 분위기 → 메뉴·주문 → 자리 → 추천 상황',
   stay:'🚗 위치 / 🅿️ 주차 / ✔️ 체크인·체크아웃 → 공간별 둘러보기 → 부대시설 → 준비물 팁',
-  activity:'📍 위치 / 🚗 주차 / ⏰ 영업시간 + 요금 → 이용 방법 → 체험 과정 → 결과 → 데이트 코스 추천',
+  activity:'📍 위치 / 🚗 주차 / ⏰ 영업시간 → 이용 방법 → 체험 과정 → 결과 → 데이트 코스 추천',
   camping:'캠핑장: 위치·주차·편의시설 → 사이트 → 주변 → 피칭 / 백패킹: 교통 → 식당 → 박지 가는 길 → 화장실 → 뷰',
   daily:'장소·주차 없이 날짜·사진 순서대로 에피소드 → 짧은 추천 목록'
 };
@@ -614,7 +614,7 @@ function renderGrid(){
       </div>
       <div class="meta">
         ${metaLine}
-        <input type="text" placeholder="느낌/키워드" value="${(p.keyword||'').replace(/"/g,'&quot;')}">
+        <input type="text" placeholder="예: 이거 시킴, 고소함" value="${(p.keyword||'').replace(/"/g,'&quot;')}">
       </div>`;
 
     d.querySelector('.meta input').oninput=ev=>{ p.keyword=ev.target.value; scheduleSave(); };
@@ -651,14 +651,16 @@ function movePhoto(from,to){
 function photosEdit(change){
   const before=photos.map(p=>p.id);
   change();
-  if(draft){
-    const at=new Map(photos.map((p,i)=>[p.id,i+1]));
-    const to=n=>at.get(before[n-1]);
-    draft.photos=(draft.photos||[]).filter(x=>to(x.index)).map(x=>({...x,index:to(x.index)})).sort((a,b)=>a.index-b.index);
-    if(draft.thumbnail) draft.thumbnail.index=to(draft.thumbnail.index)||1;
-    dirty=true; renderOut();
-  }
+  if(draft){ remapDraft(before); dirty=true; renderOut(); }
   renderGrid();
+}
+// before: 초안 번호가 가리키던 사진 id 순서 → 지금 photos 순서로 번호를 옮기고, 없어진 사진의 글은 뺀다
+function remapDraft(before){
+  if(!draft) return;
+  const at=new Map(photos.map((p,i)=>[p.id,i+1]));
+  const to=n=>at.get(before[n-1]);
+  draft.photos=(draft.photos||[]).filter(x=>to(x.index)).map(x=>({...x,index:to(x.index)})).sort((a,b)=>a.index-b.index);
+  if(draft.thumbnail) draft.thumbnail.index=to(draft.thumbnail.index)||1;
 }
 
 
@@ -792,16 +794,18 @@ const SYSTEM_RULES=`너는 네이버 블로그 후기·일상 초안을 쓰는 �
 4. intro: 도입부. quote=true면 인용구 서식으로 표시된다.
 5. photos: 사진 순서대로 각각 1~3줄. index는 사진 번호(1부터).
    - 작성자가 남긴 키워드와 감상을 최우선으로 반영한다.
-   - 키워드가 없으면 사진에 보이는 객관적 사실만 쓴다.
+   - 사진을 설명하지 말고 독자가 가 보고 싶게 쓴다: 사진에서 눈에 띄는 것 하나만 짚고 바로 반응·말 걸기("보이시죠??")·쓸모 있는 팁·다음 사진으로 넘기는 말을 붙인다. 사진 속 글자(메뉴판·가격표·간판·안내문)나 보이는 물건을 늘어놓지 않는다.
+   - 키워드가 없는 사진은 1줄로 짧게 쓰고 맛·감정은 지어내지 않는다(예: "한 상 이렇게 나왔어요!", "자 이제 본격적으로 먹어볼게요~").
    - emphasis: 강조는 글 전체에서 핵심이 분명한 사진 2~3장에만 쓰고, 나머지 사진은 type="none", phrase="".
      강조할 때는 highlight(형광펜) / underline(밑줄) / bold(굵게) 중 하나. phrase는 2~15자의 짧은 핵심 구절(문장 전체 금지)이고 text 안에 글자 그대로 들어 있어야 한다.
 6. outro(마무리)와 hashtags(# 없이 단어만, 띄어쓰기 없이).
-7. note: 작성자가 직접 확인해야 할 점을 짧게. 없으면 빈 문자열.
+7. note: 작성자가 직접 확인해야 할 점을 짧게(예: 주문 메뉴를 안 알려줬으면 "시킨 메뉴를 메뉴판 사진 키워드에 적어주면 넣을게"). 없으면 빈 문자열.
 
 [절대 규칙]
 - 사진에 없고 작성자가 말하지 않은 맛 평가·가격·감정·영업시간은 지어내지 않는다.
 - 주소·주차를 모르면 추측하지 말고 address는 빈 문자열, parking은 "주차 정보 확인 필요"로 쓴다. 정보블록에서도 "확인 필요"로 남긴다.
-- 가격·메뉴는 사진에서 읽히는 것만 본 그대로 적는다.
+- 시킨 메뉴는 작성자가 키워드·한마디에 직접 적은 것만 시킨 메뉴로 쓴다. 음식 사진을 보고 메뉴 이름을 짐작해 단정하지 않는다.
+- 가격(숫자)은 쓰지 않는다(2026-10-25 작성자 결정). 메뉴판·가격표·요금표를 옮겨 적지 않는다. 작성자가 가격에 대한 느낌을 직접 말했을 때만 그 말대로 한마디("가격이 착하네여").
 - GPS 좌표는 동네를 짐작하는 참고로만 쓰고, 좌표 숫자를 본문에 쓰지 않는다.
 - 아래 [포스팅 종류] 규칙이 제목·정보블록 항목·본문 흐름·해시태그를 정하고(위 규칙과 다르면 [포스팅 종류]가 우선), [인격] 규칙이 말투·이모지를 정한다.`;
 
@@ -810,23 +814,27 @@ const TYPE_RULES={
   food:`[포스팅 종류: 맛집 (식당·술집)]
 - 제목: 지역(+동네·랜드마크) + 장소명 + 대표 메뉴/카테고리 + "내돈내산 솔직후기" 류. 예: "동탄 남광장 맛집 모박사부대찌개 동탄점 내돈내산 솔직후기", "동탄역 닭발 찐맛집 내돈내산 후기(n번째 재방문)", "광주 송정동 맛집 서울곱창 곱창구이 내돈내산 솔직후기"
 - 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 영업 시간 : …"
-- 본문 흐름: 외관 → 메뉴판(사진에 보이는 가격 그대로) → 내부 분위기 → 기본 상차림 → 주문한 음식 하나씩 → 총평·재방문 의사
-- 메뉴판 사진: 주문한(또는 작성자가 말한) 메뉴를 "메뉴 수량 가격" 한 줄씩 적고 "요렇게 주문을 했어요"로 받는다. 예: "곱창구이 1접시 26,000원 / 내장국밥 9,000원" (사진에서 읽히는 가격만)
-- 기본 상차림 사진: 보이는 반찬을 나열하고 메인 메뉴와 어울린다는 한마디. 다 먹은 빈 그릇 사진이 있으면 "이렇게 싹 비우고 왔습니다 ^.^"
+- 본문 흐름: 외관 → 무엇을 왜 시켰는지 → 내부 분위기 → 기본 상차림 → 주문한 음식 하나씩 → 총평·재방문 의사
+- 메뉴판 사진: 메뉴판을 읽어 주지 않는다(28 life 실제 글 메뉴판 사진 32건 중 통째로 옮긴 글 0건). "메뉴판입니다!" 한 줄 다음에
+  · 작성자가 시킨 메뉴를 적었으면: 그 메뉴 이름만(많아야 4개, 가격 없이) + 고른 이유나 일화 한 줄(작성자가 말한 것: "백반이 땡겨서", "사장님께 여쭤봤는데") + "요렇게 주문을 했어요". 예: "곱창구이랑 내장국밥 요렇게 주문을 했어요"
+  · 안 적었으면: 한 줄만. 메뉴가 많으면 종류를 묶어서("카레, 우동, 파스타, 덮밥, 사이드까지 메뉴가 정~말 다양하더라구요"), 아니면 "메뉴판 참고해주세요!". 그리고 note에 주문 메뉴 확인 요청
+  · 주문 팁이 보이면 그것 하나만: "쟁반짜장, 삼선짬뽕은 2인 이상이에요 ㅠㅠ"
+- 음식 사진: 작성자가 적은 메뉴면 메뉴 이름 한 줄을 소제목처럼 두고, 맛·식감(작성자가 말한 것만)과 말 걸기("윤기가 좔좔 흐르는 게 보이시죠??")·먹는 법·"꼭 시키시는거 추천~~" 중 하나
+- 기본 상차림 사진: 반찬을 다 나열하지 말고 한 줄로 묶거나 눈에 띄는 것 하나만 짚는다("기본 상차림이 알차게 깔렸어요"). 작성자가 반찬 얘기를 했으면 그걸 띄운다("존맛탱이라 세번 리필했어요"). 다 먹은 빈 그릇 사진이 있으면 "이렇게 싹 비우고 왔습니다 ^.^"
 - 해시태그: 지역맛집·동네맛집·메뉴맛집·분위기 조합 (예: 동탄맛집 동탄남광장맛집 부대찌개맛집 / 광주맛집 송정동맛집 곱창구이맛집 노포맛집)`,
   cafe:`[포스팅 종류: 카페]
 - 제목: 지역(근교) + 분위기 형용사(고즈넉한·빈티지·오션뷰 등) + 카페 + 장소명 + 추천 상황. 예: "식물 가득 고즈넉한 오산 빈티지 카페 자뎅플로리", "동탄 근교 화성 고즈넉한 카페 화림원 주말 나들이 강추!"
 - 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 운영 시간 : …"
-- 본문 흐름: 주차 → 외관·정원 → 내부 인테리어·분위기 → 메뉴판·주문한 음료/디저트(보이는 가격) → 앉은 자리·뷰 → 어떤 사람에게 추천하는지(책 읽기·데이트·애견동반 등, 작성자 메모 기준)
+- 본문 흐름: 주차 → 외관·정원 → 내부 인테리어·분위기 → 주문한 음료/디저트(작성자가 적은 것만, 메뉴판은 옮겨 적지 않고 "메뉴판 참고해주세요" 정도) → 앉은 자리·뷰 → 어떤 사람에게 추천하는지(책 읽기·데이트·애견동반 등, 작성자 메모 기준)
 - 해시태그: 지역카페·분위기 키워드 카페 (예: 오산카페 동탄근교카페 빈티지카페 책읽기좋은카페)`,
   stay:`[포스팅 종류: 숙소·글램핑 (풀빌라·펜션·글램핑)]
 - 제목: 지역 + 특징(오션뷰·계곡 등) + 숙소 유형 + 추천 + 장소명(+객실명) 솔직 후기. 예: "태안 오션뷰 풀빌라 추천ㅣ 봄날 풀빌라(A4) 솔직 후기", "평창 뇌운계곡글램핑 후기"
-- 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 체크인·체크아웃 : …" (+ 가격·추가 옵션은 작성자가 알려준 것만 한 줄)
+- 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 체크인·체크아웃 : …" (+ 추가 옵션은 작성자가 알려준 것만 한 줄, 가격은 쓰지 않음)
 - 본문 흐름: 도착·주차 → 객실 공간별 둘러보기(거실·주방·화장실·침실, 어메니티) → 부대시설(수영장·바베큐·불멍) → 뷰 → 미리 챙기면 좋은 것(장보기·없는 물품) → 총평
 - 해시태그: 지역숙소·숙소유형 (예: 태안풀빌라 오션뷰풀빌라 태안숙소)`,
   activity:`[포스팅 종류: 체험·나들이 (낚시·액티비티·관광지·오름 등)]
 - 제목: 지역(근교) + 체험 성격 + 장소명. 예: "동탄 근교 이색 데이트 코스🔥 오산 드림실내바다낚시터", 여행지는 "당진 여행 | 자연식 좌대 낚시 삼길포항 만석좌대"
-- 정보블록 줄: "📍 위치 : …" / "🚗 주차 : …" / "⏰ 영업시간 : …" (+ 이용 요금은 사진·작성자 정보만)
+- 정보블록 줄: "📍 위치 : …" / "🚗 주차 : …" / "⏰ 영업시간 : …" (요금·가격은 쓰지 않음)
 - 본문 흐름: 찾아가는 길·입구 → 이용 방법(예약·대여·준비물·결제) → 체험 과정(시간 순) → 결과·먹방 → 이런 분께 추천(데이트 코스·주말 나들이)
 - 해시태그: 지역데이트·체험 종류 (예: 동탄데이트 실내낚시터 이색데이트)`,
   camping:`[포스팅 종류: 캠핑·백패킹]
@@ -847,8 +855,10 @@ const PERSONA_RULES={
 - 도입부(intro.text): 반드시 "안녕하세요!"로 시작 → "오늘은 ~ 후기 들고왔어요/가져왔어요/남겨볼게요"(일상은 "오늘은 ~ 일상 남겨볼게요") → 정보블록 → "그럼 시작해볼게요~!". intro.quote는 false.
 - 정보블록(도입부 안, 줄마다): [포스팅 종류]에서 정한 줄 이름 그대로, 모르면 "확인 필요". 일상은 정보블록 없음
 - 도입 예: "오늘은 ,, 광주 송정동에 있는 서울곱창 내돈내산 후기 들고왔어요 ㅎㅎ"
-- 사진별 코멘트: 사진을 보며 말 걸듯. "외관은 이렇게 생겼어요!", "내부는 요렇게 생겼습니다", "메뉴판입니다!", "한 상 이렇게 나왔어요!", "○○ 한 점 집어봤어요", "짜란,,", "짠 -"
-- 간판·현수막 문구가 사진에 읽히면 따옴표로 인용해 한마디: "'70년 전통 원조 서울곱창'이라니 간지네요." (사진에 실제로 보이는 글자만)
+- 사진별 코멘트: 대상 한 줄 + 바로 반응(묘사만 하고 끝내지 않는다). "외관은 이렇게 생겼어요!", "한 상 이렇게 나왔어요!", "○○ 한 점 집어봤어요", "보이시죠??", "진짜 멋지죠??", "짜란,,", "짠 -"
+- 시설·안내 사진은 독자가 할 행동이나 팁으로 바꿔 말한다: "주차타워에 주차하심 됩니다!", "테이블이 네개밖에 없어서 꼭 예약하고 가셔야해요 !"
+- 솔직한 아쉬움·가벼운 자기 농담도 섞는다(작성자가 말한 것만): "제입맛엔 그냥 그랬어요", "생선 알못인데 돗돔이 맞나요??"
+- 간판·현수막 문구는 글 전체에서 한 번만, 가게 성격이 드러날 때 따옴표로 인용해 한마디: "'70년 전통 원조 서울곱창'이라니 간지네요." (사진에 실제로 보이는 글자만)
 - 어미: ~했어요, ~합니다, ~하더라구요, ~답니다, ~거든요??, 가끔 ~구여, ~요!!
 - 강조 습관(자연스럽게 섞기): 물결 늘리기(진~~~짜, 너~~무, 조용~~해서), 쉼표로 말끝 흐리기(오늘은 ,, / 흠,,), 느낌표 앞 공백(꼭 ! 한번, 딱 !, 추천합니다-!-!), 초성·이모티콘(ㅎㅎ ㅋㅋㅋ ㅠㅠ ㅎㅅㅎ ㅎ_ㅎ ^.^ ^^.. >_<), 이모지 👍 😲 ❤️ 📖 🔥 가끔, 표현(존맛탱, 대존맛, 찐맛집, 쫀맛집, 내돈내산, 물멍, 알못, 뽕뽑다, 간지, 노포 바이브 제대로, 윤기가 좔좔), 독자에게 말 걸기(맛있겠쥬?!, 보이시죠??, 딱 봐도 ~죠?!)
 - 단, 맛 표현(존맛탱 등)은 작성자가 맛있다고 했을 때만 쓴다.
@@ -896,11 +906,15 @@ $('genBtn').onclick=async ()=>{
   let autoWand='';
   try{
     setStatus('사진 준비 중...');
-    // 토큰 절약: 이미지 토큰은 픽셀 수에 비례 → API에는 긴 변 1024px로 보낸다. 사진마다 한 번만 만들어 두고(다시 생성할 때 재사용), 여러 장은 한꺼번에
-    const apiImgs=await Promise.all(photos.map(async p=>p.api||(p.api=(await resize(p.file,1024)).split(',')[1])));
+    // 시작할 때의 사진 목록으로 보낸다 (준비·생성 중에 사진을 추가·삭제·이동해도 사진과 키워드 짝이 어긋나지 않게)
+    const snap=photos.slice();
+    // 토큰 절약: 이미지 토큰은 픽셀 수에 비례 → API에는 긴 변 1024px로 보낸다. 사진마다 한 번만 만들어 두고(다시 생성할 때 재사용),
+    // 한 장씩 만든다 (여러 장을 동시에 풀면 아이폰에서 메모리가 튄다)
+    const apiImgs=[];
+    for(const p of snap) apiImgs.push(p.api||(p.api=(await resize(p.file,1024)).split(',')[1]));
     const content=[];
-    for(let i=0;i<photos.length;i++){
-      const p=photos[i], data=apiImgs[i];
+    for(let i=0;i<snap.length;i++){
+      const p=snap[i], data=apiImgs[i];
       const bits=[`[사진 ${i+1}] 키워드: ${p.keyword||'(없음)'}`];
       if(p.gps) bits.push(`GPS: ${p.gps.lat}, ${p.gps.lng}`);
       if(p.time) bits.push(`촬영: ${p.time}`);
@@ -912,8 +926,8 @@ $('genBtn').onclick=async ()=>{
     const known=[['주소',info.address],['주차',info.parking],['영업시간',info.hours]].filter(x=>x[1]);
     content.push({type:'text',text:`장소 이름: ${$('placeHint').value.trim()||'(미입력)'}\n전체 한마디: ${$('memo').value.trim()||'(없음)'}`
       +(known.length?`\n작성자가 확인한 위치 정보(그대로 쓸 것): ${known.map(([k,v])=>`${k}: ${v}`).join(' / ')}`:'')
-      +`\n사진 ${photos.length}장 모두에 대해 photos 항목을 써줘.`});
-    setStatus(`Claude가 초안 쓰는 중... (사진 ${photos.length}장, 30초~1분)`);
+      +`\n사진 ${snap.length}장 모두에 대해 photos 항목을 써줘.`});
+    setStatus(`Claude가 초안 쓰는 중... (사진 ${snap.length}장, 30초~1분)`);
     const j=await callClaude({
       max_tokens:8000,
       // 블로그 글쓰기라 깊은 추론은 필요 없다 → effort를 낮춰 사고 토큰 절약
@@ -929,6 +943,7 @@ $('genBtn').onclick=async ()=>{
     const d=findJSON(textOf(j));
     if(!d) throw new Error('Claude 응답을 읽지 못했어. 다시 눌러줘.');
     draft=fixEmphasis(d); dirty=true;
+    remapDraft(snap.map(p=>p.id)); // 생성 중에 사진을 지우거나 옮겼으면 지금 순서로 번호를 옮긴다
     applyPlaceInfo(info); // Claude가 놓쳐도 ②의 위치 정보가 그대로 들어가게 한 번 더 맞춘다
     renderOut(); updateDraftLabel(); saveHistory();
     const msg=`✅ 초안 완성! (${usageText(j)}) 확인·고친 뒤 🏷️ 제목 복사 → 📋 글 전체 복사 → 붙여넣고 글 속 [사진 N] 자리에 사진 넣기. 🗂 내 초안에 자동 저장돼`;
@@ -1281,7 +1296,7 @@ async function geocodeIfNeeded(){
         if(j[0]){ const lat=+j[0].lat, lng=+j[0].lon; if(okLat(lat)&&okLng(lng)){ hit={lat,lng,q}; break; } }
       }catch(_){ offline=true; break; } // 인터넷이 안 되면 그만
     }
-    if(offline&&!hit){ geoTried.delete(addr); return; } // 연결이 돌아오면 다음 미리보기 때 다시 찾는다
+    if(offline&&!hit){ setTimeout(()=>geoTried.delete(addr),60000); return; } // 1분 뒤 다음 미리보기 때 다시 찾는다 (막혔을 때 요청이 쏟아지지 않게)
     if(hit) try{ const c=geoCache(); c[addr]=hit; localStorage.setItem('blogGeoCache',JSON.stringify(c)); }catch(_){}
   }
   if(!hit||draft!==d0||placeCoords(draft)) return;
@@ -1386,7 +1401,9 @@ function db(){
       if(!has('meta')) d.createObjectStore('meta',{keyPath:'id'});
       if(!has('data')) d.createObjectStore('data',{keyPath:'id'});
       if(!has('photos')) d.createObjectStore('photos',{keyPath:'id'}); };
-    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+    r.onblocked=()=>setStatus('⚠️ 예전 버전 화면이 다른 탭에 열려 있어서 🗂 저장이 잠깐 멈췄어. 그 탭을 닫으면 바로 이어져.');
+    r.onsuccess=()=>{ const d=r.result; d.onversionchange=()=>{ d.close(); dbP=null; }; res(d); };
+    r.onerror=()=>{ dbP=null; rej(r.error); };
   }));
 }
 // fn이 돌려준 요청의 결과를 트랜잭션이 끝난 뒤 돌려준다
@@ -1442,7 +1459,8 @@ async function saveHistory(){
   try{
     const thumb=await thumbOf((photos[ti]||photos[0]||{}).src);
     await idb('readwrite',(m,s,p)=>{
-      m.put({id,updated:Date.now(),title:String(d.title||'제목 없음'),place:form.placeHint||(d.place&&d.place.name)||'',count:keywords.length,thumb,done:false});
+      const g=m.get(id); // done(✅)은 setDone만 바꾼다 → 기존 값을 살려서 덮어쓴다
+      g.onsuccess=()=>m.put({...(g.result||{}),id,updated:Date.now(),title:String(d.title||'제목 없음'),place:form.placeHint||(d.place&&d.place.name)||'',count:keywords.length,thumb});
       s.put({id,draft:draft?d:null,form,keywords});
       if(ps) p.put({id,list:ps});
     });
@@ -1512,9 +1530,9 @@ function applyRecord(r,id,done){
     file:dataURLtoFile(p.src,p.name||`photo-${i+1}.jpg`)}));
   FORM_KEYS.forEach(k=>{ if(r.form&&typeof r.form[k]==='string') $(k).value=r.form[k];
     else if(['addrIn','parkIn','hoursIn'].includes(k)) $(k).value=''; }); // 위치 칸이 없던 옛 기록: 이전 초안의 위치가 남지 않게
-  // 종류가 생기기 전 기록이나 목록에 없는 값이면 기본값으로 (빈 선택칸이 되지 않게)
-  if(!$('postType').value) $('postType').value='food';
-  if(!$('persona').value) $('persona').value='28life';
+  // 종류·말투가 없는 기록(종류가 생기기 전 기록, 파일)이거나 목록에 없는 값이면 기본값으로 (이전 글의 값이 남거나 빈 칸이 되지 않게)
+  if(!(r.form&&r.form.postType)||!$('postType').value) $('postType').value='food';
+  if(!(r.form&&r.form.persona)||!$('persona').value) $('persona').value='28life';
   updatePersona(); updateTypeUI(); saveForm();
   curId=id; curDone=!!done; draft=r.draft?fixEmphasis(r.draft):null; dirty=false; // draft=null: ✨ 생성 전에 저장된 기록
   renderGrid(); clearTimeout(saveTimer); saveTimer=0; // 불러오기만 했는데 '최근 수정'이 바뀌지 않게
@@ -1527,6 +1545,7 @@ async function delHistory(id){
   if(!confirm('이 초안 기록을 지울까? 되돌릴 수 없어.')) return;
   try{ await idb('readwrite',(m,s,p)=>{ m.delete(id); s.delete(id); p.delete(id); }); }catch(_){}
   if(id===curId){ clearTimeout(saveTimer); saveTimer=0; curId=null; }
+  if(savedPhotos.id===id) savedPhotos={id:null,sig:''};
   renderHistory(); setStatus('✅ 기록을 지웠어.');
 }
 // 💾 글 하나를 사진까지 파일 하나({draft, form, photos})로 받는다. 📂 파일 열기로 그대로 되살린다 (백업·다른 기기로 옮기기)
@@ -1564,7 +1583,7 @@ const TAB_ID=Math.random().toString(36).slice(2);
 let tabCh=null;
 function onTabMsg(m){
   if(!m||m.from===TAB_ID||m.t!=='claim'||$('dupOv').classList.contains('show')) return;
-  flushSave(); // 잠그기 전에 이 창의 초안을 🗂 내 초안에 저장
+  flushSave().then(()=>{ savedPhotos={id:null,sig:''}; }); // 잠그기 전에 저장. 그 뒤 다른 창이 기록을 바꿀 수 있으니 다음 저장 때 사진도 다시 쓴다
   ['photoOv','histOv','setOv','personaOv'].forEach(id=>$(id).classList.contains('show')&&closeOv(id));
   openOv('dupOv');
 }
@@ -1576,7 +1595,7 @@ function sendTab(m){
 try{ tabCh=new BroadcastChannel('blog-draft-tabs'); tabCh.onmessage=e=>onTabMsg(e.data); }catch(_){}
 window.addEventListener('storage',e=>{ if(e.key==='blogTabMsg'&&e.newValue){ try{ onTabMsg(JSON.parse(e.newValue)); }catch(_){} } });
 sendTab({t:'claim'});
-$('dupOk').onclick=()=>{ closeOv('dupOv'); sendTab({t:'claim'}); setStatus('✅ 이 창에서 계속해. 다른 창은 잠겼어.'); };
+$('dupOk').onclick=()=>{ savedPhotos={id:null,sig:''}; closeOv('dupOv'); sendTab({t:'claim'}); setStatus('✅ 이 창에서 계속해. 다른 창은 잠겼어.'); };
 
 // 모바일은 앱 전환 때 탭이 그냥 닫힐 수 있으니 화면을 벗어날 때 바로 저장
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) flushSave(); });
