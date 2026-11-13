@@ -21,7 +21,8 @@
 <script>
 // 설치한 앱으로 열 때만(PC·안드로이드·아이폰) 시작 화면을 보여 준다. 브라우저 탭으로 열 때는 바로 작업 화면
 // (안드로이드 시스템 시작 화면은 manifest 배경색을 같은 초록으로 맞춰서 이 화면으로 끊김 없이 이어진다)
-if(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches) document.documentElement.classList.add('splash');
+var bs={}; try{ bs=JSON.parse(localStorage.getItem('blogSettings')||'{}')||{}; }catch(e){} // ② 아래 🚀 앱 시작 화면 스위치
+if(bs.splash!==false&&(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches)) document.documentElement.classList.add('splash');
 if(location.protocol==='https:'){ const l=document.createElement('link'); l.rel='manifest'; l.href='manifest.webmanifest'; document.head.appendChild(l); }
 </script>
 <!-- API 키가 들어 있는 페이지라 외부 CDN 대신 로컬 파일을 쓴다 -->
@@ -134,6 +135,16 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 .toast[data-kind=busy]::before,button.loading::before{content:"";display:inline-block;width:13px;height:13px;margin-right:8px;vertical-align:-2px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite}
 button.loading:disabled{opacity:.85;cursor:progress}
+/* 켜기/끄기 스위치: 진짜 체크박스는 숨기고 옆 span을 똑딱이 모양으로 */
+label.switch{display:flex;align-items:center;gap:10px;margin:10px 0 0;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;position:relative}
+label.switch .hint{font-weight:400}
+label.switch input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+label.switch input+span{flex:none;width:42px;height:24px;border-radius:999px;background:var(--line2);position:relative;transition:background .15s}
+label.switch input+span::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .15s}
+label.switch input:checked+span{background:var(--accent)}
+label.switch input:checked+span::after{transform:translateX(18px)}
+label.switch input:focus-visible+span{box-shadow:0 0 0 3px var(--ring)}
+select.inline{width:auto;padding:4px 8px;font-size:13px;min-height:0}
 .key-row{display:flex;gap:6px}
 .key-row input{flex:1;min-width:0}
 .hint a{color:var(--accent-text);font-weight:600}
@@ -333,6 +344,7 @@ html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-directi
   <input type="text" id="placeHint" placeholder="예: 성수동 ○○카페">
   <div class="place-box" id="placeBox">
     <div class="lbl-row"><b>📍 위치 정보</b> <span class="hint">알면 입력 · 비워 두면 🪄로 찾기</span></div>
+    <label class="switch"><input type="checkbox" id="autoWandSw"><span></span>🔎 빈 칸 자동 검색 <span class="hint">(초안 만든 뒤)</span></label>
     <label for="addrIn">주소</label>
     <input type="text" id="addrIn" placeholder="예: 경기도 수원시 영통구 대학1로58번길 6">
     <label for="parkIn">주차</label>
@@ -343,13 +355,20 @@ html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-directi
   </div>
   <label>전체 한마디</label>
   <textarea id="memo" rows="3" placeholder="예: 가족이랑 한잔하기 좋은 곳"></textarea>
+  <label class="switch"><input type="checkbox" id="priceSw"><span></span>💰 가격 쓰기 <span class="hint">(키워드에 직접 적은 가격만)</span></label>
+  <label class="switch"><input type="checkbox" id="splashSw"><span></span>🚀 앱 시작 화면 <span class="hint">(설치한 앱으로 열 때)</span></label>
   <label>Anthropic API 키 <span class="hint">(코드·파일에 저장 안 됨)</span></label>
   <div class="key-row">
     <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" autocapitalize="off" spellcheck="false">
     <button id="keyEye" type="button" title="키 보기/숨기기" aria-label="키 보기/숨기기">👁</button>
   </div>
   <p class="hint" style="margin:6px 0 0">키가 없으면 <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>에서 만들어 붙여넣기</p>
-  <p class="hint" style="margin:6px 0 0">키 기억: <b id="keyModeLabel"></b> · <button class="small" id="openSet2" type="button">⚙️ 바꾸기</button></p>
+  <p class="hint" style="margin:8px 0 0">키 기억 <select id="keyMode" class="inline">
+      <option value="none">기억 안 함</option>
+      <option value="tab">이 탭에서만 (기본)</option>
+      <option value="local">이 브라우저에 계속</option>
+    </select></p>
+  <p class="hint" id="keyModeWarn" style="margin:4px 0 0"></p>
 </div>
 <div class="foot">
   <button class="primary" id="genBtn">✨ Claude로 초안 생성</button>
@@ -401,24 +420,6 @@ html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-directi
 </div>
 
 
-<!-- ⚙️ 설정 (모든 초안에 공통, 이 브라우저에 저장) -->
-<div class="overlay" id="setOv">
-  <div class="modal" style="max-width:480px">
-    <button class="close" onclick="closeOv('setOv')">✕</button>
-    <h3>⚙️ 설정</h3>
-    <div class="mbody">
-      <label for="keyMode" style="margin-top:0">API 키 기억</label>
-      <select id="keyMode">
-        <option value="none">기억 안 함</option>
-        <option value="tab">이 탭에서만 (기본)</option>
-        <option value="local">이 브라우저에 계속</option>
-      </select>
-      <p class="hint" id="keyModeWarn"></p>
-      <p class="hint">설정은 모든 초안에 똑같이 적용되고, 이 브라우저에 저장돼서 다시 열어도 유지돼.</p>
-    </div>
-  </div>
-</div>
-
 <!-- 다른 창에서 사용 중 → 이 창 잠금 (가장 최근에 연/고른 창이 주인) -->
 <div class="overlay" id="dupOv">
   <div class="modal" style="max-width:420px">
@@ -443,8 +444,13 @@ html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-directi
       </div>
       <input type="file" id="draftIn" accept="application/json,.json" style="display:none">
       <div id="histList"></div>
-      <div class="hist-foot">
-        <span class="hint">사진을 올리면 자동 저장돼. 이 브라우저에만 남고 파일엔 안 들어가.</span>
+      <p class="hint" id="backupHint" style="margin:18px 0 0;white-space:pre-line">글은 사진을 올리면 이 브라우저에만 자동 저장돼(브라우저 기록을 지우면 사라져).
+📦 전체 백업을 누르면 모든 글을 사진까지 파일 하나로 받아.
+· 이름: AutoBlog-백업-날짜.json
+· 위치: 다운로드 폴더
+· 되살리기: 위의 📂 파일 열기에서 그 파일 선택</p>
+      <div class="hist-foot" style="margin-top:8px">
+        <button class="small" id="histBackup">📦 전체 백업</button>
         <button class="small" id="histClear">전체 삭제</button>
       </div>
     </div>
@@ -715,14 +721,15 @@ $('ovPrev').onclick=()=>{ if(ovIndex>0){ movePhoto(ovIndex,ovIndex-1); openPhoto
 $('ovNext').onclick=()=>{ if(ovIndex<photos.length-1){ movePhoto(ovIndex,ovIndex+1); openPhoto(ovIndex+1); } };
 $('ovDel').onclick=()=>{ if(ovIndex<0) return; const i=ovIndex; photosEdit(()=>photos.splice(i,1)); closeOv('photoOv'); };
 
-/* ---------- ⚙️ 설정 (모든 초안 공통, localStorage 'blogSettings') ---------- */
+/* ---------- 설정 (모든 초안 공통, localStorage 'blogSettings', 마지막에 고른 그대로 남는다) ---------- */
+// 설정 창 없이 ② 화면에 바로: keyMode(키 기억) · autoWand(위치 자동 검색) · prices(가격 쓰기) · splash(앱 시작 화면)
 // keyMode: none=메모리만 / tab=sessionStorage(탭 닫으면 삭제) / local=localStorage(계속)
 // (옛 버전의 pasteMode 값은 읽지 않고 버린다 — 복사는 이제 ③의 📋 글 전체 복사)
-const settings={keyMode:'tab'};
+const settings={keyMode:'tab',autoWand:true,prices:false,splash:true};
 try{ const s=JSON.parse(localStorage.getItem('blogSettings')||'{}');
-  if(['none','tab','local'].includes(s.keyMode)) settings.keyMode=s.keyMode; }catch(_){}
+  if(['none','tab','local'].includes(s.keyMode)) settings.keyMode=s.keyMode;
+  ['autoWand','prices','splash'].forEach(k=>{ if(typeof s[k]==='boolean') settings[k]=s[k]; }); }catch(_){}
 function saveSettings(){ try{ localStorage.setItem('blogSettings',JSON.stringify(settings)); }catch(_){} }
-const KEY_MODE_LABEL={none:'기억 안 함',tab:'이 탭에서만',local:'이 브라우저에 계속'};
 const KEY_MODE_WARN={
   none:'새로고침하거나 창을 닫으면 키를 다시 붙여넣어야 해. 가장 안전해.',
   tab:'이 탭을 닫으면 키가 지워져. 다른 탭과는 공유되지 않아.',
@@ -731,8 +738,13 @@ const KEY_MODE_WARN={
 function showSettings(){
   $('keyMode').value=settings.keyMode;
   $('keyModeWarn').textContent=KEY_MODE_WARN[settings.keyMode];
-  $('keyModeLabel').textContent=KEY_MODE_LABEL[settings.keyMode];
+  $('autoWandSw').checked=settings.autoWand; $('priceSw').checked=settings.prices; $('splashSw').checked=settings.splash;
 }
+const SWITCH_MSG={autoWand:['🔎 초안을 만든 뒤 빈 위치 정보를 자동으로 찾을게.','🔎 위치 정보 자동 검색을 껐어. 필요하면 🪄 버튼으로 찾아줘.'],
+  prices:['💰 키워드에 직접 적은 가격만 글에 넣을게 (예: 메뉴판 사진 키워드 "곱창구이 26000").','💰 가격은 글에 쓰지 않을게.'],
+  splash:['🚀 설치한 앱으로 열 때 시작 화면을 보여 줄게.','🚀 앱 시작 화면을 껐어.']};
+[['autoWandSw','autoWand'],['priceSw','prices'],['splashSw','splash']].forEach(([id,k])=>$(id).onchange=e=>{
+  settings[k]=e.target.checked; saveSettings(); setStatus(SWITCH_MSG[k][settings[k]?0:1]); });
 
 /* ---------- API 키: 설정에 따라 한 곳에만 둔다 ---------- */
 try{ const s=settings.keyMode==='local'?localStorage:settings.keyMode==='tab'?sessionStorage:null;
@@ -748,7 +760,7 @@ function syncKey(){
 $('apiKey').oninput=syncKey;
 $('keyEye').onclick=()=>{ const k=$('apiKey'); k.type=k.type==='password'?'text':'password'; };
 $('keyMode').onchange=e=>{ settings.keyMode=e.target.value; saveSettings(); syncKey(); showSettings(); };
-$('openSet2').onclick=()=>{ showSettings(); openOv('setOv'); };
+showSettings();
 
 /* ---------- Claude API ---------- */
 const MODEL='claude-sonnet-5-5';
@@ -833,21 +845,21 @@ const SYSTEM_RULES=`너는 네이버 블로그 후기·일상 초안을 쓰는 �
 - 사진에 없고 작성자가 말하지 않은 맛 평가·가격·감정·영업시간은 지어내지 않는다.
 - 주소·주차를 모르면 추측하지 말고 address는 빈 문자열, parking은 "주차 정보 확인 필요"로 쓴다. 정보블록에서도 "확인 필요"로 남긴다.
 - 시킨 메뉴는 작성자가 키워드·한마디에 직접 적은 것만 시킨 메뉴로 쓴다. 음식 사진을 보고 메뉴 이름을 짐작해 단정하지 않는다.
-- 가격(숫자)은 쓰지 않는다(2026-10-25 작성자 결정). 메뉴판·가격표·요금표를 옮겨 적지 않는다. 작성자가 가격에 대한 느낌을 직접 말했을 때만 그 말대로 한마디("가격이 착하네여").
+- 가격은 맨 아래 [가격] 규칙을 따른다. 메뉴판·가격표·요금표를 통째로 옮겨 적지 않는다.
 - GPS 좌표는 동네를 짐작하는 참고로만 쓰고, 좌표 숫자를 본문에 쓰지 않는다.
 - 아래 [포스팅 종류] 규칙이 제목·정보블록 항목·본문 흐름·해시태그를 정하고(위 규칙과 다르면 [포스팅 종류]가 우선), [인격] 규칙이 말투·이모지를 정한다.`;
 
 // 포스팅 종류별 규칙 (28 life 전체 글 85개 중 종류별 대표 글을 분석해 정함). 정보블록 줄 이름은 patchIntro 정규식과 맞춘다
 const TYPE_RULES={
   food:`[포스팅 종류: 맛집 (식당·술집)]
-- 제목: 지역(+동네·랜드마크) + 장소명 + 대표 메뉴/카테고리 + "내돈내산 솔직후기" 류. 예: "동탄 남광장 맛집 모박사부대찌개 동탄점 내돈내산 솔직후기", "동탄역 닭발 찐맛집 내돈내산 후기(n번째 재방문)", "광주 송정동 맛집 서울곱창 곱창구이 내돈내산 솔직후기"
+- 제목: 지역(+동네·랜드마크) + 장소명 + 대표 메뉴/카테고리 + "내돈내산 솔직후기" 류. 예: "동탄 남광장 맛집 모박사부대찌개 동탄점 내돈내산 솔직후기", "동탄역 닭발 찐맛집 내돈내산 후기(n번째 재방문)", "광주 송정동 맛집 서울곱창 곱창구이 내돈내산 솔직후기", 크게 만족했다고 했을 때만 "동탄 능동 곱창 찐맛집 개성곱창 내돈내산 후기 진짜 제발 꼭가세요🙏"
 - 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 영업 시간 : …"
 - 본문 흐름: 외관 → 무엇을 왜 시켰는지 → 내부 분위기 → 기본 상차림 → 주문한 음식 하나씩 → 총평·재방문 의사
 - 메뉴판 사진: 메뉴판을 읽어 주지 않는다(28 life 실제 글 메뉴판 사진 32건 중 통째로 옮긴 글 0건). "메뉴판입니다!" 한 줄 다음에
-  · 작성자가 시킨 메뉴를 적었으면: 그 메뉴 이름만(많아야 4개, 가격 없이) + 고른 이유나 일화 한 줄(작성자가 말한 것: "백반이 땡겨서", "사장님께 여쭤봤는데") + "요렇게 주문을 했어요". 예: "곱창구이랑 내장국밥 요렇게 주문을 했어요"
+  · 작성자가 시킨 메뉴를 적었으면: 그 메뉴만(많아야 4개, 가격은 [가격] 규칙대로) + 고른 이유나 일화 한 줄(작성자가 말한 것: "백반이 땡겨서", "사장님께 여쭤봤는데") + "요렇게 주문을 했어요". 예: "곱창구이랑 내장국밥 요렇게 주문을 했어요"
   · 안 적었으면: 한 줄만. 메뉴가 많으면 종류를 묶어서("카레, 우동, 파스타, 덮밥, 사이드까지 메뉴가 정~말 다양하더라구요"), 아니면 "메뉴판 참고해주세요!". 그리고 note에 주문 메뉴 확인 요청
   · 주문 팁이 보이면 그것 하나만: "쟁반짜장, 삼선짬뽕은 2인 이상이에요 ㅠㅠ"
-- 음식 사진: 작성자가 적은 메뉴면 메뉴 이름 한 줄을 소제목처럼 두고, 맛·식감(작성자가 말한 것만)과 말 걸기("윤기가 좔좔 흐르는 게 보이시죠??")·먹는 법·"꼭 시키시는거 추천~~" 중 하나
+- 음식 사진: 작성자가 적은 메뉴면 메뉴 이름(가격을 쓸 수 있으면 "메뉴명 가격") 한 줄을 소제목처럼 두고, 맛·식감(작성자가 말한 것만)과 말 걸기("윤기가 좔좔 흐르는 게 보이시죠??")·먹는 법·"꼭 시키시는거 추천~~" 중 하나
 - 기본 상차림 사진: 반찬을 다 나열하지 말고 한 줄로 묶거나 눈에 띄는 것 하나만 짚는다("기본 상차림이 알차게 깔렸어요"). 작성자가 반찬 얘기를 했으면 그걸 띄운다("존맛탱이라 세번 리필했어요"). 다 먹은 빈 그릇 사진이 있으면 "이렇게 싹 비우고 왔습니다 ^.^"
 - 해시태그: 지역맛집·동네맛집·메뉴맛집·분위기 조합 (예: 동탄맛집 동탄남광장맛집 부대찌개맛집 / 광주맛집 송정동맛집 곱창구이맛집 노포맛집)`,
   cafe:`[포스팅 종류: 카페]
@@ -857,13 +869,15 @@ const TYPE_RULES={
 - 해시태그: 지역카페·분위기 키워드 카페 (예: 오산카페 동탄근교카페 빈티지카페 책읽기좋은카페)`,
   stay:`[포스팅 종류: 숙소·글램핑 (풀빌라·펜션·글램핑)]
 - 제목: 지역 + 특징(오션뷰·계곡 등) + 숙소 유형 + 추천 + 장소명(+객실명) 솔직 후기. 예: "태안 오션뷰 풀빌라 추천ㅣ 봄날 풀빌라(A4) 솔직 후기", "평창 뇌운계곡글램핑 후기"
-- 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 체크인·체크아웃 : …" (+ 추가 옵션은 작성자가 알려준 것만 한 줄, 가격은 쓰지 않음)
+- 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 체크인·체크아웃 : …" (+ 추가 옵션은 작성자가 알려준 것만 한 줄, 가격은 [가격] 규칙대로)
 - 본문 흐름: 도착·주차 → 객실 공간별 둘러보기(거실·주방·화장실·침실, 어메니티) → 부대시설(수영장·바베큐·불멍) → 뷰 → 미리 챙기면 좋은 것(장보기·없는 물품) → 총평
+- 해외·여행지 숙소(호텔·리조트): 제목 "여행지 + 숙소 (강력) 추천 | 동네 + 숙소명(영문명)" (예: "치앙마이 숙소 강력 추천 | 올드타운 호텔 로지(Hotel Rosy)"). 정보블록은 "📍숙소명" / "⏰ 체크인 15시 - 체크아웃 12시"(주차 줄 없음, 작성자가 알려준 것만). 흐름: 도입에서 결론부터(만족·아쉬움 한 줄) → 가는 법(공항·택시) → 외관·로비 → 부대시설(수영장·헬스장·식당, 이용 시간 팁 "~이니 참고하세요!") → 방(침실·욕실·미니바·웰컴푸드) → 조식·룸서비스(작성자가 먹은 메뉴만, 평가를 말했으면 메뉴별 한 줄 총평) → 챙기면 좋은 것 → 마무리(이런 분께 추천 / 아쉬웠으면 솔직히 "두번 가라하면 굳이 안갈 것 같습니다")
 - 해시태그: 지역숙소·숙소유형 (예: 태안풀빌라 오션뷰풀빌라 태안숙소)`,
   activity:`[포스팅 종류: 체험·나들이 (낚시·액티비티·관광지·오름 등)]
 - 제목: 지역(근교) + 체험 성격 + 장소명. 예: "동탄 근교 이색 데이트 코스🔥 오산 드림실내바다낚시터", 여행지는 "당진 여행 | 자연식 좌대 낚시 삼길포항 만석좌대"
-- 정보블록 줄: "📍 위치 : …" / "🚗 주차 : …" / "⏰ 영업시간 : …" (요금·가격은 쓰지 않음)
+- 정보블록 줄: "📍 위치 : …" / "🚗 주차 : …" / "⏰ 영업시간 : …" (요금·가격은 [가격] 규칙대로)
 - 본문 흐름: 찾아가는 길·입구 → 이용 방법(예약·대여·준비물·결제) → 체험 과정(시간 순) → 결과·먹방 → 이런 분께 추천(데이트 코스·주말 나들이)
+- 뷰티·시술 후기(속눈썹펌·네일 등)도 이 종류: 도입에서 결론부터("결론부터 말씀드리자면 ~ 완전 대만족!!") → 외관·주차 → 내부 분위기 → 상담 내용(작성자가 말한 것) → 시술 전/후 사진("참 밋밋하죠?" → "똘망~~똘망 해졌죠 확실히??") → 소요 시간·불편했던 점 유무 → 재방문 의사·추천
 - 해시태그: 지역데이트·체험 종류 (예: 동탄데이트 실내낚시터 이색데이트)`,
   camping:`[포스팅 종류: 캠핑·백패킹]
 - 사진·메모로 캠핑장(오토캠핑, 예약 사이트)인지 백패킹(산·섬 박지)인지 먼저 판단한다.
@@ -885,14 +899,14 @@ const PERSONA_RULES={
 - 도입 예: "오늘은 ,, 광주 송정동에 있는 서울곱창 내돈내산 후기 들고왔어요 ㅎㅎ"
 - 사진별 코멘트: 대상 한 줄 + 바로 반응(묘사만 하고 끝내지 않는다). "외관은 이렇게 생겼어요!", "한 상 이렇게 나왔어요!", "○○ 한 점 집어봤어요", "보이시죠??", "진짜 멋지죠??", "짜란,,", "짠 -"
 - 시설·안내 사진은 독자가 할 행동이나 팁으로 바꿔 말한다: "주차타워에 주차하심 됩니다!", "테이블이 네개밖에 없어서 꼭 예약하고 가셔야해요 !"
-- 솔직한 아쉬움·가벼운 자기 농담도 섞는다(작성자가 말한 것만): "제입맛엔 그냥 그랬어요", "생선 알못인데 돗돔이 맞나요??"
+- 솔직한 아쉬움·가벼운 자기 농담도 섞는다(작성자가 말한 것만): "제입맛엔 그냥 그랬어요", "생선 알못인데 돗돔이 맞나요??", "(전 안함)". 작성자가 별로였다고 했으면 돌려 말하지 않고 메뉴·시설별로 갈라서 쓴다: "근데 솔직히 된찌에서는 아무맛 안났어요 / 다른거 시켜드시길! ㅋㅎ", "얘는 추천!", "시원하게 비추 갑니다", "위치하나는 인정입니다"
 - 간판·현수막 문구는 글 전체에서 한 번만, 가게 성격이 드러날 때 따옴표로 인용해 한마디: "'70년 전통 원조 서울곱창'이라니 간지네요." (사진에 실제로 보이는 글자만)
 - 어미: ~했어요, ~합니다, ~하더라구요, ~답니다, ~거든요??, 가끔 ~구여, ~요!!
-- 강조 습관(자연스럽게 섞기): 물결 늘리기(진~~~짜, 너~~무, 조용~~해서), 쉼표로 말끝 흐리기(오늘은 ,, / 흠,,), 느낌표 앞 공백(꼭 ! 한번, 딱 !, 추천합니다-!-!), 초성·이모티콘(ㅎㅎ ㅋㅋㅋ ㅠㅠ ㅎㅅㅎ ㅎ_ㅎ ^.^ ^^.. >_<), 이모지 👍 😲 ❤️ 📖 🔥 가끔, 표현(존맛탱, 대존맛, 찐맛집, 쫀맛집, 내돈내산, 물멍, 알못, 뽕뽑다, 간지, 노포 바이브 제대로, 윤기가 좔좔), 독자에게 말 걸기(맛있겠쥬?!, 보이시죠??, 딱 봐도 ~죠?!)
+- 강조 습관(자연스럽게 섞기): 물결 늘리기(진~~~짜, 너~~무, 조용~~해서), 쉼표로 말끝 흐리기(오늘은 ,, / 흠,,), 느낌표 앞 공백(꼭 ! 한번, 딱 !, 추천합니다-!-!), 초성·이모티콘(ㅎㅎ ㅋㅋㅋ ㅠㅠ ㅎㅅㅎ ㅎ_ㅎ ^.^ ^^.. >_<), 이모지 👍 😲 ❤️ 📖 🔥 가끔, 표현(존맛탱, 대존맛, 찐맛집, 쫀맛집, 내돈내산, 물멍, 알못, 뽕뽑다, 간지, 노포 바이브 제대로, 윤기가 좔좔, 냅다, 럭키~, 옳타쿠나, ㅋㅎ), 크게 만족했다고 했을 때만("재방문 의사 천억퍼센트!", "여기에 1등 드립니다..", "사장님 간 천재에요"), 독자에게 말 걸기(맛있겠쥬?!, 보이시죠??, 딱 봐도 ~죠?!)
 - 단, 맛 표현(존맛탱 등)은 작성자가 맛있다고 했을 때만 쓴다.
 - 마무리(outro): 총평 한두 줄("○○은 ~ 분위기에 ~도 ~도 만족스러웠던 곳이에요 ㅎㅎ") + "다들 ~ 가실일 있으시다면(또는 ~ 찾고 계신다면) 꼭 ! 한번 들러보세요~!!" → "그럼 이만!!" → 마지막 줄에 "-끝-" (반드시 포함)
 - 해시태그: 지역·카테고리 조합 6~8개. 예: 기흥맛집 용인맛집 지곡동맛집 불고기맛집 / 광주맛집 송정동맛집 곱창구이맛집 노포맛집
-- 주 활동 지역: 동탄(남광장·북광장·호수공원), 오산, 용인 기흥, 화성, 수원, 광주(광산구 송정동).`,
+- 주 활동 지역: 동탄(남광장·북광장·호수공원), 오산, 용인 기흥, 화성, 수원, 광주(광산구 송정동), 태안. 해외여행 글도 있다(치앙마이).`,
   'clean':`[인격: clean — 담백 정보형]
 이모지와 감탄사를 거의 쓰지 않는다. 위치·주차·영업시간·메뉴 등 사실 위주로 짧고 단정하게. "~입니다", "~했습니다" 중심. 초성체(ㅎㅎ, ㅋㅋ)와 신조어를 쓰지 않는다. 도입부는 한 줄 요약으로 쓰고 quote=true.`,
   'emotional':`[인격: emotional — 감성 에세이형]
@@ -901,6 +915,11 @@ const PERSONA_RULES={
 반말로 짧게 끊어 쓴다("갔는데 진짜 괜찮았음", "여긴 웨이팅 좀 길어"). 존댓말을 쓰지 않는다. 솔직하고 담백하게, 이모지는 최소한만. 도입부 quote=false.`
 };
 
+// 💰 가격 쓰기 스위치에 따라 하나만 보낸다 (공통 규칙은 캐시라 여기서 갈라 둔다)
+const PRICE_RULES={
+  off:'[가격: 쓰지 않음] 가격·요금 숫자는 쓰지 않는다. 작성자가 가격에 대한 느낌을 직접 말했을 때만 그 말대로 한마디("가격이 착하네여").',
+  on:'[가격: 작성자가 적은 것만] 가격·요금은 작성자가 키워드·한마디에 직접 적은 숫자만 그대로 쓴다(예: 키워드 "곱창구이 26000" → "곱창구이 1접시 26,000원"). 사진 속 메뉴판·가격표·요금표의 숫자는 읽어 쓰지 않는다. 적은 가격에는 감상을 한마디 붙여도 된다(작성자가 말한 범위에서): "가격이 상당히 착하네여", "가격대는 좀 나가는 편이죠?"'
+};
 const S={type:'string'};
 const obj=(props)=>({type:'object',additionalProperties:false,required:Object.keys(props),properties:props});
 const DRAFT_SCHEMA=obj({
@@ -963,7 +982,8 @@ $('genBtn').onclick=async ()=>{
       system:[
         {type:'text',text:SYSTEM_RULES,cache_control:{type:'ephemeral'}},
         {type:'text',text:TYPE_RULES[$('postType').value]||TYPE_RULES.food},
-        {type:'text',text:PERSONA_RULES[$('persona').value]||PERSONA_RULES['28life']}
+        {type:'text',text:PERSONA_RULES[$('persona').value]||PERSONA_RULES['28life']},
+        {type:'text',text:settings.prices?PRICE_RULES.on:PRICE_RULES.off} // 💰 가격 쓰기 스위치
       ],
       messages:[{role:'user',content}]
     });
@@ -979,7 +999,7 @@ $('genBtn').onclick=async ()=>{
     // 모바일은 ③이 화면 아래에 있으니 결과로 내려 준다
     if(matchMedia('(max-width:899px)').matches) $('out').closest('.col').scrollIntoView({behavior:'smooth',block:'start'});
     // ②의 위치 정보(주소·주차·영업시간)에 빈 칸이 있으면 🪄 검색으로 빈 칸만 채운다. 적어 둔 칸은 그대로 쓴다
-    if(!isDaily()&&!(info.address&&info.parking&&info.hours)&&((draft.place&&draft.place.name)||$('placeHint').value.trim())) autoWand=msg;
+    if(settings.autoWand&&!isDaily()&&!(info.address&&info.parking&&info.hours)&&((draft.place&&draft.place.name)||$('placeHint').value.trim())) autoWand=msg;
   }catch(err){ setStatus('⚠️ '+err.message); }
   finally{ setBusy(false,'genBtn'); }
   if(autoWand) runWand(autoWand);
@@ -1129,17 +1149,24 @@ $('resetAllBtn').onclick=()=>{
 // 💾 파일로 저장해 둔 draft.json은 🗂 내 초안 서랍의 📂 파일 열기로 연다
 // 생성·검색 중에 열면 끝난 결과가 불러온 초안의 기록을 덮어쓴다 → 끝난 뒤에만
 $('draftOpen').onclick=()=>busy?setStatus('⚠️ 지금 작업이 끝난 뒤에 불러와줘.'):$('draftIn').click();
+// 파일에서 온 사진 목록 검사: src는 화면 <img>에 그대로 들어가니 사진 data URL만 받는다. 나머지 값도 글자·숫자로 맞춘다
+function cleanPhotos(list){
+  if(!Array.isArray(list)||!list.every(p=>p&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(p.src))) throw new Error('사진 형식이 올바르지 않아');
+  list.forEach(p=>{ p.keyword=String(p.keyword||''); p.short=/^[\d. :]*$/.test(p.short||'')?String(p.short||''):''; /* 카드에 HTML로 들어감 */ p.time=p.time?String(p.time):null;
+    p.name=String(p.name||''); p.gps=p.gps&&okLat(p.gps.lat)&&okLng(p.gps.lng)?{lat:p.gps.lat,lng:p.gps.lng}:null; });
+  return list;
+}
 $('draftIn').onchange=e=>{
   const f=e.target.files[0]; if(!f) return;
   const reader=new FileReader();
   reader.onload=()=>{
     try{
       const j=JSON.parse(reader.result);
+      // 📦 전체 백업 파일: 화면은 그대로 두고 🗂 기록만 되살린다
+      if(j&&j.autoblogBackup&&Array.isArray(j.posts)){ restoreBackup(j.posts).catch(err=>setStatus('⚠️ 백업을 되살리지 못했어: '+err.message)); return; }
       // 사진이 든 샘플/꾸러미 파일: {draft, form, photos:[{src:'data:image/...'}]}. src는 화면 <img>에 그대로 들어가니 사진 data URL만 받는다
       if(j&&('draft' in j)&&Array.isArray(j.photos)&&(j.draft===null||typeof j.draft==='object')){
-        if(!j.photos.every(p=>p&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(p.src))) throw new Error('사진 형식이 올바르지 않아');
-        j.photos.forEach(p=>{ p.keyword=String(p.keyword||''); p.short=/^[\d. :]*$/.test(p.short||'')?String(p.short||''):''; /* 카드에 HTML로 들어감 */ p.time=p.time?String(p.time):null;
-          p.gps=p.gps&&okLat(p.gps.lat)&&okLng(p.gps.lng)?{lat:p.gps.lat,lng:p.gps.lng}:null; });
+        cleanPhotos(j.photos);
         flushSave(); applyRecord(j,null); return;
       }
       const d=fixEmphasis(j);
@@ -1580,6 +1607,45 @@ async function delHistory(id){
   if(savedPhotos.id===id) savedPhotos={id:null,sig:''};
   renderHistory(); setStatus('✅ 기록을 지웠어.');
 }
+// 📦 전체 백업: 🗂의 모든 글을 사진까지 파일 하나로 받는다. 받은 뒤 이름·위치·되살리는 법을 서랍과 상태칸에 알려 준다
+async function backupAll(){
+  await flushSave();
+  let metas=[]; try{ metas=await idb('readonly',m=>m.getAll()); }catch(_){ return setStatus('⚠️ 이 브라우저에서는 초안 기록을 읽을 수 없어.'); }
+  const posts=[];
+  for(const m of metas){ const r=await readRecord(m.id).catch(()=>null); if(r) posts.push({meta:m,draft:r.draft,form:r.form,photos:r.photos}); }
+  if(!posts.length) return setStatus('백업할 글이 아직 없어.');
+  const d=new Date(), z=n=>String(n).padStart(2,'0');
+  const name=`AutoBlog-백업-${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}.json`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify({autoblogBackup:1,saved:Date.now(),posts})],{type:'application/json'}));
+  a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),30000);
+  const where=/iPhone|iPad|iPod/i.test(navigator.userAgent)?'「파일」 앱 → 다운로드':IS_PHONE?'「내 파일」 앱 → Download(다운로드)':'「다운로드」 폴더';
+  const msg=`📦 글 ${posts.length}개를 백업했어.\n· 이름: ${name}\n· 위치: ${where}\n· 되살리기: 🗂 내 초안 → 📂 파일 열기에서 이 파일 선택`;
+  $('backupHint').textContent=msg; setStatus(msg);
+}
+// 백업 파일의 글들을 🗂에 되살린다. 같은 글(id)은 백업 내용으로 덮어쓰고, 지금 화면에 열려 있는 글은 건드리지 않는다
+async function restoreBackup(posts){
+  const rows=[]; let skipped=0;
+  for(const x of posts){
+    if(!x||typeof x!=='object') continue;
+    const m=x.meta||{};
+    const id=/^[a-z0-9]{4,24}$/.test(m.id||'')?m.id:Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    if(id===curId){ skipped++; continue; }
+    const photos=cleanPhotos(x.photos||[]);
+    const d=x.draft&&typeof x.draft==='object'?fixEmphasis(x.draft):null;
+    const form=Object.fromEntries(FORM_KEYS.map(k=>[k,String((x.form&&x.form[k])||'')]));
+    rows.push({meta:{id,updated:Number(m.updated)||Date.now(),title:String(m.title||(d&&d.title)||'제목 없음'),place:String(m.place||''),count:photos.length,
+        thumb:/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(m.thumb||'')?m.thumb:'',done:!!m.done},
+      data:{id,draft:d,form,keywords:photos.map(p=>p.keyword)},
+      photos:{id,list:photos.map(p=>({src:p.src,gps:p.gps,time:p.time,short:p.short,name:p.name}))}});
+  }
+  if(!rows.length) return setStatus(skipped?'지금 열려 있는 글뿐이라 되살릴 게 없어.':'⚠️ 백업 파일에 글이 없어.');
+  await idb('readwrite',(m,s,p)=>{ rows.forEach(r=>{ m.put(r.meta); s.put(r.data); p.put(r.photos); }); });
+  renderHistory();
+  setStatus(`✅ 백업에서 글 ${rows.length}개를 되살렸어. 🗂 내 초안 목록에서 열 수 있어.`+(skipped?' (지금 열려 있는 글은 그대로 뒀어)':''));
+}
+$('histBackup').onclick=()=>backupAll().catch(err=>setStatus('⚠️ 백업하지 못했어: '+err.message));
 // 💾 글 하나를 사진까지 파일 하나({draft, form, photos})로 받는다. 📂 파일 열기로 그대로 되살린다 (백업·다른 기기로 옮기기)
 async function exportHistory(id){
   if(id===curId) await flushSave();
@@ -1616,7 +1682,7 @@ let tabCh=null;
 function onTabMsg(m){
   if(!m||m.from===TAB_ID||m.t!=='claim'||$('dupOv').classList.contains('show')) return;
   flushSave().then(()=>{ savedPhotos={id:null,sig:''}; }); // 잠그기 전에 저장. 그 뒤 다른 창이 기록을 바꿀 수 있으니 다음 저장 때 사진도 다시 쓴다
-  ['photoOv','histOv','setOv','personaOv'].forEach(id=>$(id).classList.contains('show')&&closeOv(id));
+  ['photoOv','histOv','personaOv'].forEach(id=>$(id).classList.contains('show')&&closeOv(id));
   openOv('dupOv');
 }
 function sendTab(m){
