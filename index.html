@@ -21,8 +21,7 @@
 <script>
 // 설치한 앱으로 열 때만(PC·안드로이드·아이폰) 시작 화면을 보여 준다. 브라우저 탭으로 열 때는 바로 작업 화면
 // (안드로이드 시스템 시작 화면은 manifest 배경색을 같은 초록으로 맞춰서 이 화면으로 끊김 없이 이어진다)
-var bs={}; try{ bs=JSON.parse(localStorage.getItem('blogSettings')||'{}')||{}; }catch(e){} // ② 아래 🚀 앱 시작 화면 스위치
-if(bs.splash!==false&&(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches)) document.documentElement.classList.add('splash');
+if(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches) document.documentElement.classList.add('splash');
 if(location.protocol==='https:'){ const l=document.createElement('link'); l.rel='manifest'; l.href='manifest.webmanifest'; document.head.appendChild(l); }
 </script>
 <!-- API 키가 들어 있는 페이지라 외부 CDN 대신 로컬 파일을 쓴다 -->
@@ -125,6 +124,7 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .hint{font-size:13px;color:var(--sub)}
 .status{font-size:13px;margin-top:10px;white-space:pre-line;word-break:break-word}
 .status:empty{display:none}
+@media (max-width:899px){ #status{display:none} } /* 폰은 아래 알림(토스트) 하나만: 같은 글이 상태칸에 또 남지 않게 */
 .status:not(:empty){background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--r-sm);padding:8px 10px}
 /* 메시지 종류: err=빨강, busy=파랑(진행 중), ok/기본=초록 */
 .status[data-kind=err],.toast[data-kind=err]{border-left-color:var(--err)}
@@ -364,7 +364,6 @@ html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-directi
   <label>전체 한마디</label>
   <textarea id="memo" rows="3" placeholder="예: 가족이랑 한잔하기 좋은 곳"></textarea>
   <label class="switch"><input type="checkbox" id="priceSw"><span></span>💰 가격 쓰기 <span class="hint">(키워드에 직접 적은 가격만)</span></label>
-  <label class="switch"><input type="checkbox" id="splashSw"><span></span>🚀 앱 시작 화면 <span class="hint">(설치한 앱으로 열 때)</span></label>
   <div id="keyBox">
   <label>Anthropic API 키 <span class="hint">(코드·파일에 저장 안 됨)</span></label>
   <div class="key-row">
@@ -492,8 +491,9 @@ function setStatus(t){
   // PC는 ②의 상태칸이 늘 보이므로 같은 글을 토스트로 또 띄우지 않는다 (폰이거나 창이 덮고 있을 때만)
   if(!t||!(matchMedia('(max-width:899px)').matches||document.querySelector('.overlay.show'))) return toast.classList.remove('show');
   toast.textContent=t; toast.dataset.kind=kind; toast.classList.add('show');
-  // 진행 중 알림은 다음 메시지가 올 때까지 둔다. 오류는 읽을 시간을 더 준다
-  if(kind!=='busy') toastTimer=setTimeout(()=>toast.classList.remove('show'), kind==='err'?7000:3500);
+  // 진행 중 알림은 다음 메시지가 올 때까지 둔다. 폰의 오류는 상태칸이 없으니 누를 때까지 남긴다
+  const phone=matchMedia('(max-width:899px)').matches;
+  if(kind!=='busy'&&!(kind==='err'&&phone)) toastTimer=setTimeout(()=>toast.classList.remove('show'), kind==='err'?7000:3500);
 }
 $('toast').onclick=()=>$('toast').classList.remove('show');
 
@@ -736,16 +736,16 @@ $('ovNext').onclick=()=>{ if(ovIndex<photos.length-1){ movePhoto(ovIndex,ovIndex
 $('ovDel').onclick=()=>{ if(ovIndex<0) return; const i=ovIndex; photosEdit(()=>photos.splice(i,1)); closeOv('photoOv'); };
 
 /* ---------- 설정 (모든 초안 공통, localStorage 'blogSettings', 마지막에 고른 그대로 남는다) ---------- */
-// 설정 창 없이 ② 화면에 바로: keyMode(키 기억) · autoWand(위치 자동 검색) · prices(가격 쓰기) · splash(앱 시작 화면)
+// 설정 창 없이 ② 화면에 바로: keyMode(키 기억) · autoWand(위치 자동 검색) · prices(가격 쓰기). 앱 시작 화면은 스위치 없이 항상
 // keyMode: none=메모리만 / tab=sessionStorage(탭 닫으면 삭제) / local=localStorage(계속)
 // (옛 버전의 pasteMode 값은 읽지 않고 버린다 — 복사는 이제 ③의 📋 글 전체 복사)
-const settings={keyMode:'tab',autoWand:true,prices:false,splash:true};
+const settings={keyMode:'tab',autoWand:true,prices:false};
 try{ const s=JSON.parse(localStorage.getItem('blogSettings')||'{}');
   if(['none','tab','local'].includes(s.keyMode)) settings.keyMode=s.keyMode;
   // 설치한 앱(홈 화면 앱)은 앱을 닫으면 '이 탭에서만' 키가 지워져 매번 다시 넣어야 했다 → 직접 고른 적이 없으면 '이 브라우저에 계속'
   if(!s.keyModeChosen&&(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches)) settings.keyMode='local';
   settings.keyModeChosen=!!s.keyModeChosen;
-  ['autoWand','prices','splash'].forEach(k=>{ if(typeof s[k]==='boolean') settings[k]=s[k]; }); }catch(_){}
+  ['autoWand','prices'].forEach(k=>{ if(typeof s[k]==='boolean') settings[k]=s[k]; }); }catch(_){}
 function saveSettings(){ try{ localStorage.setItem('blogSettings',JSON.stringify(settings)); }catch(_){} }
 const KEY_MODE_WARN={
   none:'새로고침하거나 창을 닫으면 키를 다시 붙여넣어야 해. 가장 안전해.',
@@ -755,12 +755,11 @@ const KEY_MODE_WARN={
 function showSettings(){
   $('keyMode').value=settings.keyMode;
   $('keyModeWarn').textContent=KEY_MODE_WARN[settings.keyMode];
-  $('autoWandSw').checked=settings.autoWand; $('priceSw').checked=settings.prices; $('splashSw').checked=settings.splash;
+  $('autoWandSw').checked=settings.autoWand; $('priceSw').checked=settings.prices;
 }
 const SWITCH_MSG={autoWand:['🔎 초안을 만든 뒤 빈 위치 정보를 자동으로 찾을게.','🔎 위치 정보 자동 검색을 껐어. 필요하면 🪄 버튼으로 찾아줘.'],
-  prices:['💰 키워드에 직접 적은 가격만 글에 넣을게 (예: 메뉴판 사진 키워드 "곱창구이 26000").','💰 가격은 글에 쓰지 않을게.'],
-  splash:['🚀 설치한 앱으로 열 때 시작 화면을 보여 줄게.','🚀 앱 시작 화면을 껐어.']};
-[['autoWandSw','autoWand'],['priceSw','prices'],['splashSw','splash']].forEach(([id,k])=>$(id).onchange=e=>{
+  prices:['💰 키워드에 직접 적은 가격만 글에 넣을게 (예: 메뉴판 사진 키워드 "곱창구이 26000").','💰 가격은 글에 쓰지 않을게.']};
+[['autoWandSw','autoWand'],['priceSw','prices']].forEach(([id,k])=>$(id).onchange=e=>{
   settings[k]=e.target.checked; saveSettings(); setStatus(SWITCH_MSG[k][settings[k]?0:1]); });
 
 /* ---------- API 키: 설정에 따라 한 곳에만 둔다 ---------- */
