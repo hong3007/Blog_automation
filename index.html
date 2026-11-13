@@ -130,10 +130,9 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none}
 .status[data-kind=err],.toast[data-kind=err]{border-left-color:var(--err)}
 .status[data-kind=busy],.toast[data-kind=busy]{border-left-color:var(--info)}
 /* 모바일에서 ②의 상태칸이 안 보여도 결과를 알 수 있게 화면 아래에 띄우는 알림 */
-/* 📲 앱 설치 안내: 설치할 수 있을 때만 맨 위에 한 줄 (설치한 앱에서는 안 보인다) */
-#installBar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--card2);border-bottom:1px solid var(--line);font-size:14px}
-#installBar[hidden]{display:none}
-#installBar span{flex:1}
+/* 📲 AutoBlog 설치 버튼: 설치할 수 있을 때만 맨 위 줄에 (폰은 그 아래 한 줄을 다 쓴다). 설치한 앱에서는 안 보인다 */
+#installBtn{width:auto;flex:none}
+@media (max-width:899px){ #installBtn{order:9;flex:1 1 100%} }
 .toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translate(-50%,16px);width:max-content;max-width:min(520px,calc(100% - 32px));background:var(--toast-bg);color:#fff;border-left:4px solid var(--accent);border-radius:12px;padding:10px 14px;font-size:14px;white-space:pre-line;word-break:break-word;box-shadow:var(--shadow-lg);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
 .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto;cursor:pointer}
 /* 진행 중 표시용 회전 원 (✨ 버튼과 진행 중 알림에 같이 쓴다) */
@@ -305,27 +304,28 @@ html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-directi
 </head>
 <body>
 <div id="splash" aria-hidden="true"><div class="card">📸</div><b>AutoBlog</b><small>블로그를 열심히 운영하는 에옹공주를 위하여 👑</small><div class="dots"><i></i><i></i><i></i></div></div>
-<div id="installBar" hidden><span id="installMsg">📲 AutoBlog를 앱으로 설치하면 홈 화면에서 바로 열 수 있어</span><button id="installBtn" class="primary small">설치</button><button id="installNo" class="small" aria-label="설치 안내 닫기">✕</button></div>
-<script>
-// 크롬·엣지는 설치 창을 사이트가 저절로 띄울 수 없다(누르는 동작이 있어야 함) → 설치할 수 있다는 신호(beforeinstallprompt)가 오면
-// 맨 위에 안내 줄을 보여 주고, 「설치」를 누르면 브라우저 설치 창을 연다. ✕는 이 탭을 닫을 때까지만 숨긴다
-(function(){
-  const g=id=>document.getElementById(id), bar=g('installBar');
-  let ev=null, no=false; try{ no=!!sessionStorage.getItem('blogInstallNo'); }catch(_){}
-  if(no||navigator.standalone===true||matchMedia('(display-mode: standalone)').matches) return;
-  addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); ev=e; bar.hidden=false; });
-  addEventListener('appinstalled',()=>{ bar.hidden=true; });
-  g('installBtn').onclick=async()=>{ if(!ev) return; const e=ev; ev=null; bar.hidden=true; e.prompt(); try{ await e.userChoice; }catch(_){} };
-  g('installNo').onclick=()=>{ bar.hidden=true; try{ sessionStorage.setItem('blogInstallNo','1'); }catch(_){} };
-  // 아이폰은 그 신호가 없다 → 방법만 알려 준다
-  if(location.protocol==='https:'&&/iPhone|iPad|iPod/.test(navigator.userAgent)){ g('installMsg').textContent='📲 앱으로 설치: 공유 버튼 → 「홈 화면에 추가」'; g('installBtn').hidden=true; bar.hidden=false; }
-})();
-</script>
 <div class="app">
 
 <div class="topbar">
 <h1><img id="logo" alt="" width="28" height="28">AutoBlog</h1>
 <script>document.getElementById('logo').src=document.querySelector('link[rel="apple-touch-icon"]').href; // 탭·홈 화면 아이콘과 같은 그림</script>
+<button id="installBtn" class="primary small" hidden>📲 AutoBlog 설치</button>
+<script>
+// 크롬·엣지는 설치 창을 사이트가 저절로 띄울 수 없다(누르는 동작이 있어야 함) → 설치할 수 있다는 신호(beforeinstallprompt)가 오면
+// 이 버튼만 보여 주고, 누르면 브라우저 설치 창을 연다. 안내 글·닫기 버튼은 두지 않는다(사용자: "안내글이 안 깔끔해")
+(function(){
+  const btn=document.getElementById('installBtn'); let ev=null;
+  if(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches) return;
+  addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); ev=e; btn.hidden=false; });
+  addEventListener('appinstalled',()=>{ btn.hidden=true; });
+  const ios=location.protocol==='https:'&&/iPhone|iPad|iPod/.test(navigator.userAgent); // 아이폰은 그 신호가 없다 → 누르면 방법을 알림으로
+  if(ios) btn.hidden=false;
+  btn.onclick=async()=>{
+    if(!ev) return ios&&setStatus('📲 공유 버튼 → 「홈 화면에 추가」를 누르면 설치돼.');
+    const e=ev; ev=null; btn.hidden=true; e.prompt(); try{ await e.userChoice; }catch(_){}
+  };
+})();
+</script>
 <button id="histBtn">🗂 내 초안</button>
 <button id="resetAllBtn">🆕 새 포스팅</button>
 </div>
