@@ -132,6 +132,8 @@ button:disabled{opacity:.5;cursor:not-allowed;transform:none}
 /* 모바일에서 ②의 상태칸이 안 보여도 결과를 알 수 있게 화면 아래에 띄우는 알림 */
 /* 📲 AutoBlog 설치 버튼: 설치할 수 있을 때만 맨 위 줄에 (폰은 그 아래 한 줄을 다 쓴다). 설치한 앱에서는 안 보인다 */
 #installBtn{width:auto;flex:none}
+.install-steps{margin:0 0 16px;padding-left:22px;line-height:2.1}
+.install-steps svg{vertical-align:-4px;color:var(--accent-text)}
 @media (max-width:899px){ #installBtn{order:9;flex:1 1 100%} }
 .toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));transform:translate(-50%,16px);width:max-content;max-width:min(520px,calc(100% - 32px));background:var(--toast-bg);color:#fff;border-left:4px solid var(--accent);border-radius:12px;padding:10px 14px;font-size:14px;white-space:pre-line;word-break:break-word;box-shadow:var(--shadow-lg);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s}
 .toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto;cursor:pointer}
@@ -318,10 +320,10 @@ html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-directi
   if(navigator.standalone===true||matchMedia('(display-mode: standalone)').matches) return;
   addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); ev=e; btn.hidden=false; });
   addEventListener('appinstalled',()=>{ btn.hidden=true; });
-  const ios=location.protocol==='https:'&&/iPhone|iPad|iPod/.test(navigator.userAgent); // 아이폰은 그 신호가 없다 → 누르면 방법을 알림으로
+  const ios=location.protocol==='https:'&&/iPhone|iPad|iPod/.test(navigator.userAgent); // 아이폰은 그 신호가 없고 사이트가 대신 설치할 수도 없다 → 누르면 방법 창
   if(ios) btn.hidden=false;
   btn.onclick=async()=>{
-    if(!ev) return ios&&setStatus('📲 공유 버튼 → 「홈 화면에 추가」를 누르면 설치돼.');
+    if(!ev) return ios&&openOv('installOv'); // 안드로이드 설치 창처럼 생긴 작은 창으로 두 단계를 알려 준다
     const e=ev; ev=null; btn.hidden=true; e.prompt(); try{ await e.userChoice; }catch(_){}
   };
 })();
@@ -431,6 +433,21 @@ html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-directi
   </div>
 </div>
 
+
+<!-- 아이폰 설치 방법 (📲 AutoBlog 설치 버튼 → 아이폰에서만). 아이폰은 사이트가 설치를 대신 못 해서 두 단계를 직접 눌러야 한다 -->
+<div class="overlay" id="installOv">
+  <div class="modal" style="max-width:340px">
+    <button class="close" onclick="closeOv('installOv')">✕</button>
+    <h3>AutoBlog 설치</h3>
+    <div class="mbody">
+      <ol class="install-steps">
+        <li>브라우저의 <b>공유 버튼</b> <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4M6 11H5v9h14v-9h-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> 누르기</li>
+        <li><b>홈 화면에 추가</b> 누르기</li>
+      </ol>
+      <button class="primary" onclick="closeOv('installOv')">확인</button>
+    </div>
+  </div>
+</div>
 
 <!-- 다른 창에서 사용 중 → 이 창 잠금 (가장 최근에 연/고른 창이 주인) -->
 <div class="overlay" id="dupOv">
