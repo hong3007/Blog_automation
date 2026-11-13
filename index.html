@@ -154,9 +154,9 @@ html.ov-lock,html.ov-lock body{overflow:hidden}
 .place-box{margin-top:14px;padding:4px 12px 12px;border:1px dashed var(--magic);border-radius:var(--r-sm);background:var(--card2)}
 .place-box .lbl-row{margin-top:8px;font-size:13px}
 .place-box label{margin-top:8px}
-#typeDesc,#personaDesc{display:none}
-#postType:focus+#typeDesc,#persona:focus+#personaDesc{display:block} /* 고르는 동안만 보인다 */
-.persona-desc{font-size:13px;color:var(--sub);background:var(--card2);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;margin-top:8px;white-space:pre-line}
+#typeDesc{display:none}
+#postType:focus+#typeDesc{display:block} /* 고르는 동안만 보인다 */
+.type-desc{font-size:13px;color:var(--sub);background:var(--card2);border:1px solid var(--line);border-radius:var(--r-sm);padding:9px 12px;margin-top:8px;white-space:pre-line}
 
 /* ---------- ① 사진 ---------- */
 .drop{border:2px dashed var(--line2);border-radius:var(--r);padding:14px;text-align:center;color:var(--sub);font-size:13px;font-weight:600;cursor:pointer;background:var(--card2);transition:background .12s,border-color .12s,color .12s}
@@ -332,22 +332,13 @@ html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-directi
 <div class="body">
   <label for="postType" style="margin-top:0">포스팅 종류 <span class="hint">(글 구성·제목·정보 줄이 바뀜)</span></label>
   <select id="postType">
-    <option value="food">🍽️ 맛집 (식당·술집)</option>
-    <option value="cafe">☕ 카페</option>
-    <option value="stay">🏨 숙소·글램핑</option>
-    <option value="activity">🎣 체험·나들이</option>
-    <option value="camping">🏕️ 캠핑·백패킹</option>
+    <option value="food">🍽️ 맛집 (식당·술집·카페)</option>
+    <option value="trip">✈️ 여행 (숙소·체험·나들이)</option>
+    <option value="camping">🏕️ 백패킹·캠핑</option>
+    <option value="review">🛍️ 리뷰 (상품·뷰티·각종 후기)</option>
     <option value="daily">📔 일상</option>
   </select>
-  <div class="persona-desc" id="typeDesc"></div>
-  <label class="lbl-row">인격 (글 말투) <button id="personaHelp" class="small">자세히</button></label>
-  <select id="persona">
-    <option value="28life">28 life (내 블로그 말투) — 기본</option>
-    <option value="clean">담백 정보형</option>
-    <option value="emotional">감성 에세이형</option>
-    <option value="friend">친구한테 말하듯</option>
-  </select>
-  <div class="persona-desc" id="personaDesc"></div>
+  <div class="type-desc" id="typeDesc"></div>
   <label id="placeHintLbl">장소 이름</label>
   <input type="text" id="placeHint" placeholder="예: 성수동 ○○카페">
   <div class="place-box" id="placeBox">
@@ -417,15 +408,6 @@ html.splash #splash{position:fixed;inset:0;z-index:100;display:flex;flex-directi
         <button id="ovDel">이 사진 삭제</button>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- 인격 설명 오버레이 -->
-<div class="overlay" id="personaOv">
-  <div class="modal">
-    <button class="close" onclick="closeOv('personaOv')">✕</button>
-    <h3>인격(말투) 프리셋</h3>
-    <div class="mbody" id="personaFull"></div>
   </div>
 </div>
 
@@ -507,57 +489,36 @@ function closeOv(id){
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay.show').forEach(o=>o.id!=='dupOv'&&closeOv(o.id)); });
 document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o&&o.id!=='dupOv') closeOv(o.id); }));
 
-/* ---------- 인격 ---------- */
-const PERSONA_DESC={
-  '28life':'"안녕하세요!" → 🚗위치/🅿️주차/✔️영업시간 → 사진별 수다 → "그럼 이만!!" → "-끝-" → 해시태그',
-  'clean':'이모지·감탄사 최소. 위치·주차·영업시간·메뉴 등 사실 위주로 짧고 단정하게.',
-  'emotional':'분위기와 그때의 기분 중심. 정보는 최소한, 문장은 여유 있게.',
-  'friend':'친구한테 카톡하듯 반말. 짧게 끊어 쓰고 솔직하게.'
-};
-const PERSONA_FULL={
-  '28life':`<b>28 life (블로그 주인 본인 말투)</b><ul>
-    <li>제목: <code>지역 + 장소명 + 카테고리 + 내돈내산 솔직후기</code></li>
-    <li>도입: <code>안녕하세요!</code> → "오늘은 ~ 후기 들고왔어요" → "그럼 시작해볼게요~!"</li>
-    <li>정보블록: 🚗 위치 / 🅿️ 주차 / ✔️ 영업 시간</li>
-    <li>말버릇: 진~~~짜, 너~~무, 쉼표로 말끝 흐리기 <code>,,</code>, 느낌표 앞 공백 <code>꼭 ! 한번</code></li>
-    <li>ㅎㅎ ㅋㅋㅋ ㅠㅠ ㅎㅅㅎ ㅎ_ㅎ ^.^ &gt;_&lt; / 존맛탱·찐맛집·물멍</li>
-    <li>마무리: 총평 → <code>그럼 이만!!</code> → <code>-끝-</code></li>
-    <li>해시태그: 지역+카테고리 6~8개 붙여쓰기</li></ul>`,
-  'clean':`<b>담백 정보형</b><ul><li>이모지·초성체·신조어를 쓰지 않음</li><li>위치·주차·영업시간·메뉴 등 사실 위주</li><li><code>~입니다</code>, <code>~했습니다</code> 중심의 짧고 단정한 문장</li></ul>`,
-  'emotional':`<b>감성 에세이형</b><ul><li>장소의 분위기와 그때의 기분 중심</li><li>정보는 최소한만, 문장은 여유 있게</li><li>과한 이모지·느낌표를 쓰지 않음</li></ul>`,
-  'friend':`<b>친구한테 말하듯</b><ul><li>반말로 짧게 끊어 씀 (<code>갔는데 진짜 괜찮았음</code>)</li><li>존댓말을 쓰지 않음</li><li>이모지는 최소한만</li></ul>`
-};
-function updatePersona(){ $('personaDesc').textContent=PERSONA_DESC[$('persona').value]||''; }
-$('persona').onchange=updatePersona;
-$('personaHelp').onclick=()=>{ $('personaFull').innerHTML=Object.values(PERSONA_FULL).join('<hr style="border:none;border-top:1px solid var(--line);margin:12px 0">'); openOv('personaOv'); };
-
-/* ---------- 포스팅 종류 (28 life 전체 글 85개 분석으로 정함) ---------- */
+/* ---------- 포스팅 종류 = 28 life 블로그 카테고리 (냠냠·여행·백패킹·각종 후기·일기, 2026-11-13 재조사). 말투는 언제나 28 life ---------- */
 const TYPE_DESC={
-  food:'🚗 위치 / 🅿️ 주차 / ✔️ 영업 시간 → 외관 → 시킨 메뉴 → 내부 → 음식 → 총평',
-  cafe:'🚗 위치 / 🅿️ 주차 / ✔️ 운영 시간 → 외관·정원 → 분위기 → 메뉴·주문 → 자리 → 추천 상황',
-  stay:'🚗 위치 / 🅿️ 주차 / ✔️ 체크인·체크아웃 → 공간별 둘러보기 → 부대시설 → 준비물 팁',
-  activity:'📍 위치 / 🚗 주차 / ⏰ 영업시간 → 이용 방법 → 체험 과정 → 결과 → 데이트 코스 추천',
-  camping:'캠핑장: 위치·주차·편의시설 → 사이트 → 주변 → 피칭 / 백패킹: 교통 → 식당 → 박지 가는 길 → 화장실 → 뷰',
+  food:'🚗 위치 / 🅿️ 주차 / ✔️ 영업 시간 → 외관 → 시킨 메뉴 → 내부 → 음식 → 총평 (카페면 분위기·자리·추천 상황)',
+  trip:'숙소: 위치·주차·체크인 → 공간별 둘러보기 → 부대시설 → 팁 / 체험·나들이: 이용 방법 → 체험 과정 → 결과 → 추천',
+  camping:'백패킹: 교통 → 식당 → 박지 가는 길 → 화장실 → 뷰 / 캠핑장: 위치·주차·편의시설 → 사이트 → 주변 → 피칭',
+  review:'상품: 왜 샀는지 → 구매처 → 개봉 → 색감·실물 → 디테일 → 누구에게 추천 / 가게(속눈썹펌·사주 등): 결론부터 → 내부 → 받은 과정 → 재방문',
   daily:'장소·주차 없이 날짜·사진 순서대로 에피소드 → 짧은 추천 목록'
 };
-// 일상은 장소 정보가 없으니 ②의 위치 칸·🪄 검색·지도 링크를 숨긴다
-const isDaily=()=>$('postType').value==='daily';
+// 예전 6종류로 저장된 기록·입력값을 새 카테고리로 (activity에 있던 뷰티 후기는 여행으로 열린다 → 다시 생성하려면 리뷰로 직접 바꾼다)
+const OLD_TYPE={cafe:'food',stay:'trip',activity:'trip'};
+const formVal=(k,v)=>k==='postType'&&Object.hasOwn(OLD_TYPE,v)?OLD_TYPE[v]:v;
+const isDaily=()=>$('postType').value==='daily', isReview=()=>$('postType').value==='review';
+// 장소 글이 아닌 것: 일상, 그리고 상품 리뷰(리뷰인데 초안에 가게 이름이 비어 있음) → 위치 블록·지도·자동 🪄 검색을 하지 않는다
+// ponytail: 상품/가게 구분은 Claude가 채운 place.name 하나에 기댄다(초안 형식에 구분 칸이 없음). 자주 틀리면 draft에 kind 칸을 추가
+const noPlace=()=>isDaily()||(isReview()&&!!draft&&!(draft.place&&draft.place.name));
 function updateTypeUI(){
   $('typeDesc').textContent=TYPE_DESC[$('postType').value]||'';
-  const daily=isDaily();
-  $('placeBox').hidden=daily; // 🪄 버튼도 이 상자 안에 있다
-  $('placeHintLbl').textContent=daily?'장소 이름 (선택)':'장소 이름';
+  $('placeBox').hidden=isDaily(); // 🪄 버튼도 이 상자 안에 있다. 리뷰는 가게 후기일 수 있어 남긴다(상품이면 비워 두면 됨)
+  $('placeHintLbl').textContent=isReview()?'가게·상품 이름':isDaily()?'장소 이름 (선택)':'장소 이름';
+  $('placeHint').placeholder=isReview()?'예: ○○ 백팩 25L / ○○ 속눈썹펌':'예: 성수동 ○○카페';
 }
 $('postType').addEventListener('change',()=>{ updateTypeUI(); updateBtns(); if(draft) renderOut(); });
 
 /* ---------- 입력칸 기억 (localStorage) — API 키는 절대 여기 넣지 않는다 ---------- */
-const FORM_KEYS=['postType','persona','placeHint','memo','addrIn','parkIn','hoursIn'];
-try{ const s=JSON.parse(localStorage.getItem('blogForm')||'{}'); FORM_KEYS.forEach(k=>{ if(typeof s[k]==='string') $(k).value=s[k]; }); }catch(_){}
-if(!$('persona').value) $('persona').value='28life'; // 저장된 값이 옛 옵션이면 기본값으로
+const FORM_KEYS=['postType','placeHint','memo','addrIn','parkIn','hoursIn'];
+try{ const s=JSON.parse(localStorage.getItem('blogForm')||'{}'); FORM_KEYS.forEach(k=>{ if(typeof s[k]==='string') $(k).value=formVal(k,s[k]); }); }catch(_){}
 if(!$('postType').value) $('postType').value='food';
 function saveForm(){ try{ localStorage.setItem('blogForm',JSON.stringify(Object.fromEntries(FORM_KEYS.map(k=>[k,$(k).value])))); }catch(_){} }
 FORM_KEYS.forEach(k=>$(k).addEventListener('input',()=>{ saveForm(); scheduleSave(); updateBtns(); }));
-updatePersona(); updateTypeUI();
+updateTypeUI();
 
 /* ---------- 사진 추가 ---------- */
 async function resize(file, max=1280){
@@ -852,7 +813,7 @@ const SYSTEM_RULES=`너는 네이버 블로그 후기·일상 초안을 쓰는 �
 [포스팅 구조]
 1. title: 네이버 검색 유입용. 아래 [포스팅 종류]의 제목 공식을 따른다. 25~35자, 과장 금지. title_alts에 대안 2개.
 2. thumbnail: 가장 선명하고 장소나 대표 메뉴가 잘 보이는 사진 1장의 index와 이유.
-3. place: name(상호), address, naver_query(네이버 지도 검색어). parking: 주차 정보.
+3. place: name(가게·장소의 상호. 브랜드명·상품명은 넣지 않는다), address, naver_query(네이버 지도 검색어). parking: 주차 정보.
 4. intro: 도입부. quote=true면 인용구 서식으로 표시된다.
 5. photos: 사진 순서대로 각각 1~3줄. index는 사진 번호(1부터).
    - 작성자가 남긴 키워드와 감상을 최우선으로 반영한다.
@@ -869,11 +830,12 @@ const SYSTEM_RULES=`너는 네이버 블로그 후기·일상 초안을 쓰는 �
 - 시킨 메뉴는 작성자가 키워드·한마디에 직접 적은 것만 시킨 메뉴로 쓴다. 음식 사진을 보고 메뉴 이름을 짐작해 단정하지 않는다.
 - 가격은 맨 아래 [가격] 규칙을 따른다. 메뉴판·가격표·요금표를 통째로 옮겨 적지 않는다.
 - GPS 좌표는 동네를 짐작하는 참고로만 쓰고, 좌표 숫자를 본문에 쓰지 않는다.
-- 아래 [포스팅 종류] 규칙이 제목·정보블록 항목·본문 흐름·해시태그를 정하고(위 규칙과 다르면 [포스팅 종류]가 우선), [인격] 규칙이 말투·이모지를 정한다.`;
+- [포스팅 종류] 규칙이 제목·정보블록 항목·본문 흐름·해시태그를 정하고(위 규칙과 다르면 [포스팅 종류]가 우선), [인격] 규칙이 말투·이모지를 정한다. [포스팅 종류]가 도입·마무리 문구를 따로 정했으면 [인격]의 문구 대신 그것을 쓴다.`;
 
-// 포스팅 종류별 규칙 (28 life 전체 글 85개 중 종류별 대표 글을 분석해 정함). 정보블록 줄 이름은 patchIntro 정규식과 맞춘다
+// 포스팅 종류별 규칙 (28 life 글 중 종류별 대표 글을 분석해 정함. 근거: research/28life-style.md). 정보블록 줄 이름은 patchIntro 정규식과 맞춘다
 const TYPE_RULES={
-  food:`[포스팅 종류: 맛집 (식당·술집)]
+  food:`[포스팅 종류: 맛집 (식당·술집·카페)]
+- 사진·메모로 식당·술집인지 카페인지 먼저 판단한다. 아래는 식당·술집 기준이고, 카페는 맨 아래 [카페일 때]를 따른다.
 - 제목: 지역(+동네·랜드마크) + 장소명 + 대표 메뉴/카테고리 + "내돈내산 솔직후기" 류. 예: "동탄 남광장 맛집 모박사부대찌개 동탄점 내돈내산 솔직후기", "동탄역 닭발 찐맛집 내돈내산 후기(n번째 재방문)", "광주 송정동 맛집 서울곱창 곱창구이 내돈내산 솔직후기", 크게 만족했다고 했을 때만 "동탄 능동 곱창 찐맛집 개성곱창 내돈내산 후기 진짜 제발 꼭가세요🙏"
 - 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 영업 시간 : …"
 - 본문 흐름: 외관 → 무엇을 왜 시켰는지 → 내부 분위기 → 기본 상차림 → 주문한 음식 하나씩 → 총평·재방문 의사
@@ -883,29 +845,49 @@ const TYPE_RULES={
   · 주문 팁이 보이면 그것 하나만: "쟁반짜장, 삼선짬뽕은 2인 이상이에요 ㅠㅠ"
 - 음식 사진: 작성자가 적은 메뉴면 메뉴 이름(가격을 쓸 수 있으면 "메뉴명 가격") 한 줄을 소제목처럼 두고, 맛·식감(작성자가 말한 것만)과 말 걸기("윤기가 좔좔 흐르는 게 보이시죠??")·먹는 법·"꼭 시키시는거 추천~~" 중 하나
 - 기본 상차림 사진: 반찬을 다 나열하지 말고 한 줄로 묶거나 눈에 띄는 것 하나만 짚는다("기본 상차림이 알차게 깔렸어요"). 작성자가 반찬 얘기를 했으면 그걸 띄운다("존맛탱이라 세번 리필했어요"). 다 먹은 빈 그릇 사진이 있으면 "이렇게 싹 비우고 왔습니다 ^.^"
-- 해시태그: 지역맛집·동네맛집·메뉴맛집·분위기 조합 (예: 동탄맛집 동탄남광장맛집 부대찌개맛집 / 광주맛집 송정동맛집 곱창구이맛집 노포맛집)`,
-  cafe:`[포스팅 종류: 카페]
+- 해시태그: 지역맛집·동네맛집·메뉴맛집·분위기 조합 (예: 동탄맛집 동탄남광장맛집 부대찌개맛집 / 광주맛집 송정동맛집 곱창구이맛집 노포맛집)
+[카페일 때]
 - 제목: 지역(근교) + 분위기 형용사(고즈넉한·빈티지·오션뷰 등) + 카페 + 장소명 + 추천 상황. 예: "식물 가득 고즈넉한 오산 빈티지 카페 자뎅플로리", "동탄 근교 화성 고즈넉한 카페 화림원 주말 나들이 강추!"
 - 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 운영 시간 : …"
 - 본문 흐름: 주차 → 외관·정원 → 내부 인테리어·분위기 → 주문한 음료/디저트(작성자가 적은 것만, 메뉴판은 옮겨 적지 않고 "메뉴판 참고해주세요" 정도) → 앉은 자리·뷰 → 어떤 사람에게 추천하는지(책 읽기·데이트·애견동반 등, 작성자 메모 기준)
 - 해시태그: 지역카페·분위기 키워드 카페 (예: 오산카페 동탄근교카페 빈티지카페 책읽기좋은카페)`,
-  stay:`[포스팅 종류: 숙소·글램핑 (풀빌라·펜션·글램핑)]
+  trip:`[포스팅 종류: 여행 (숙소·체험·나들이)]
+- 사진·메모로 숙소 글인지 체험·나들이 글인지 먼저 판단한다. 낚시+숙소 패키지처럼 섞인 글은 시간 순서대로 쓰고 정보블록은 체험 쪽을 따른다.
+[숙소일 때 (풀빌라·펜션·글램핑·호텔)]
 - 제목: 지역 + 특징(오션뷰·계곡 등) + 숙소 유형 + 추천 + 장소명(+객실명) 솔직 후기. 예: "태안 오션뷰 풀빌라 추천ㅣ 봄날 풀빌라(A4) 솔직 후기", "평창 뇌운계곡글램핑 후기"
 - 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 체크인·체크아웃 : …" (+ 추가 옵션은 작성자가 알려준 것만 한 줄, 가격은 [가격] 규칙대로)
 - 본문 흐름: 도착·주차 → 객실 공간별 둘러보기(거실·주방·화장실·침실, 어메니티) → 부대시설(수영장·바베큐·불멍) → 뷰 → 미리 챙기면 좋은 것(장보기·없는 물품) → 총평
 - 해외·여행지 숙소(호텔·리조트): 제목 "여행지 + 숙소 (강력) 추천 | 동네 + 숙소명(영문명)" (예: "치앙마이 숙소 강력 추천 | 올드타운 호텔 로지(Hotel Rosy)"). 정보블록은 "📍숙소명" / "⏰ 체크인 15시 - 체크아웃 12시"(주차 줄 없음, 작성자가 알려준 것만). 흐름: 도입에서 결론부터(만족·아쉬움 한 줄) → 가는 법(공항·택시) → 외관·로비 → 부대시설(수영장·헬스장·식당, 이용 시간 팁 "~이니 참고하세요!") → 방(침실·욕실·미니바·웰컴푸드) → 조식·룸서비스(작성자가 먹은 메뉴만, 평가를 말했으면 메뉴별 한 줄 총평) → 챙기면 좋은 것 → 마무리(이런 분께 추천 / 아쉬웠으면 솔직히 "두번 가라하면 굳이 안갈 것 같습니다")
-- 해시태그: 지역숙소·숙소유형 (예: 태안풀빌라 오션뷰풀빌라 태안숙소)`,
-  activity:`[포스팅 종류: 체험·나들이 (낚시·액티비티·관광지·오름 등)]
+- 해시태그: 지역숙소·숙소유형 (예: 태안풀빌라 오션뷰풀빌라 태안숙소)
+[체험·나들이일 때 (낚시·찜질·액티비티·관광지·데이트 코스 등)]
 - 제목: 지역(근교) + 체험 성격 + 장소명. 예: "동탄 근교 이색 데이트 코스🔥 오산 드림실내바다낚시터", 여행지는 "당진 여행 | 자연식 좌대 낚시 삼길포항 만석좌대"
 - 정보블록 줄: "📍 위치 : …" / "🚗 주차 : …" / "⏰ 영업시간 : …" (요금·가격은 [가격] 규칙대로)
 - 본문 흐름: 찾아가는 길·입구 → 이용 방법(예약·대여·준비물·결제) → 체험 과정(시간 순) → 결과·먹방 → 이런 분께 추천(데이트 코스·주말 나들이)
-- 뷰티·시술 후기(속눈썹펌·네일 등)도 이 종류: 도입에서 결론부터("결론부터 말씀드리자면 ~ 완전 대만족!!") → 외관·주차 → 내부 분위기 → 상담 내용(작성자가 말한 것) → 시술 전/후 사진("참 밋밋하죠?" → "똘망~~똘망 해졌죠 확실히??") → 소요 시간·불편했던 점 유무 → 재방문 의사·추천
 - 해시태그: 지역데이트·체험 종류 (예: 동탄데이트 실내낚시터 이색데이트)`,
-  camping:`[포스팅 종류: 캠핑·백패킹]
+  camping:`[포스팅 종류: 백패킹·캠핑]
 - 사진·메모로 캠핑장(오토캠핑, 예약 사이트)인지 백패킹(산·섬 박지)인지 먼저 판단한다.
 - 캠핑장: 제목 "지역 + 특징(계곡 앞 등) + 캠핑장 + 장소명 + 사이트명 후기" (예: "충북 단양 계곡 앞 캠핑장 캠프우아 벨리뷰 6번 사이트 후기"). 정보블록 줄 "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 편의시설 : …"(화장실·샤워실 등 확인된 것). 흐름: 사이트맵·사이트 번호 → 가는 길·주차 → 주변 자연(계곡·뷰) → 피칭 → 놀거리·먹거리 → 편의시설 → 총평
 - 백패킹: 제목 "월 + 지역 + 산·섬 + 백패킹 (+괄호로 담은 정보)" (예: "여수 개도 백패킹 여행 (배편, 식당, 박지 가는법, 화장실 정보)", "12월 강원도 횡성 태기산 설산 백패킹"). 정보블록 대신 "[장소명]" 아래 "기간 : …" / "교통 : …" / "기타 : …"(작성자 정보만). 흐름: 교통(배편·주차) → 식당·장보기 → 박지 가는 길(소요시간) → 화장실·식수 → 박지 뷰·일몰 → 저녁·장비 → 다음날·철수. 일기처럼 "~했다" 반말이 섞여도 된다. place.address·parking은 모르면 빈 문자열
 - 해시태그: 백패킹·지역백패킹·박지/캠핑장 이름 (예: 백패킹 여수백패킹 개도백패킹)`,
+  review:`[포스팅 종류: 리뷰 (상품·뷰티·시술·각종 후기)]
+- 사진·메모로 산 물건 리뷰인지, 가게에 가서 받은 서비스 후기(속눈썹펌·네일·사주카페 등)인지 먼저 판단한다.
+[상품 리뷰일 때 (가방·옷·장비·화장품 등 산 물건)]
+- place.name·address·naver_query는 반드시 빈 문자열(브랜드명·상품명·구매처도 넣지 않는다). 작성자 위치 정보가 같이 와도 무시한다.
+- 제목: 브랜드·상품명 + "리뷰"/"후기" + 색상·용량 같은 선택지 + 다루는 내용. 예: "티켓투더문 리뷰 @문스톤그레이 25L + 제이드그린/샌드 15L 색상부터 수납공간까지"
+- 장소 글이 아니다: 정보블록·주소·주차를 쓰지 않는다. place.name·address·naver_query, parking은 모두 빈 문자열("주차 정보 확인 필요"도 쓰지 않는다).
+- 도입: "오늘은 ○○ 후기를 들고 왔어요 ~~" → 왜 샀는지(작성자가 말한 것) → 어떤 색상·크기를 다루는지. "그럼 시작해볼게요~!" 없이 바로 본문으로 가도 된다
+- 본문 흐름: 어디서 샀는지(작성자가 말한 것만) → 처음 받은 모습·개봉 → 펼친 모습·크기 비교 → 색감·실물 느낌(작성자가 말한 비유 그대로: "카키색65에 아이보리35 섞은 느낌??") → 디테일 하나씩(주머니·고리·수납, "여기에 보조배터리 넣고 다녔어요 !!") → 여러 개면 서로 비교 → 결론(누구에게 어떤 걸 추천, "저는 다시 사라고 해도 15리터 살 것 같아요 ~!!")
+- 비슷한 사진이 여러 장 이어지면 사진마다 길게 쓰지 않는다: 한 장에만 말을 걸고("어떠세요? 색감 느낌이 좀 오시나요??") 나머지는 아주 짧게 넘긴다
+- 치수·용량·소재·기능은 작성자가 적었거나 사진에 분명히 보이는 것만 쓴다. 상세페이지 같은 스펙 나열 금지. 아쉬운 점도 작성자가 말했으면 솔직하게("내부에 추가 포켓같은건 따로 없었습니다")
+- 마무리: "제 포스팅이 구매에 도움을 드렸으면 좋겠네요 ^.,^" → "그럼 이만 마치겠습니다 ~~" → "-끝-"
+- 해시태그: 브랜드·상품명·상품 종류·색상 (예: 티켓투더문 티켓투더문백팩 티켓투더문후기 여행가방추천)
+[가게 후기일 때 (속눈썹펌·네일·사주카페 등)]
+- place.name에 가게 상호를 반드시 채운다(작성자가 적은 가게 이름 그대로).
+- 제목: 지역 + 무엇을 하는 곳 + 장소명 + "솔직후기"/"강추". 예: "동탄 속눈썹펌 잘하는 곳, 무드모아 래쉬&브로우 강추", "수원 사주카페 타로카페 베르 솔직후기"
+- 정보블록 줄: "🚗 위치 : …" / "🅿️ 주차 : …" / "✔️ 영업 시간 : …" (작성자가 예약해야 한다고 했으면 "🙌 예약필수" 한 줄)
+- 본문 흐름: 도입에서 결론부터("결론부터 말씀드리자면 ~ 완전 대만족!!") → 외관·주차 → 내부 분위기 → 상담 내용(작성자가 말한 것) → 시술 전/후 사진("참 밋밋하죠?" → "똘망~~똘망 해졌죠 확실히??") → 소요 시간·불편했던 점 유무 → 재방문 의사·추천
+- 사주·상담처럼 과정이 사진에 안 남는 곳은 받은 내용 대신 얼마나 꼼꼼했는지·걸린 시간·만족도를 쓴다(작성자가 말한 것만)
+- 해시태그: 지역 + 서비스 종류 (예: 동탄속눈썹펌 동탄래쉬 / 수원사주카페 수원타로)`,
   daily:`[포스팅 종류: 일상]
 - 제목: 기간 중심. 예: "밀린 일상 쓰기 (25년 5월)", "[일상] 간만에 올려보는 일상 25년 1월부터 4월까지"
 - 정보블록·주소·주차를 쓰지 않는다. place.name·address·naver_query, parking은 모두 빈 문자열("주차 정보 확인 필요"도 쓰지 않는다).
@@ -913,11 +895,11 @@ const TYPE_RULES={
 - 해시태그: 일상·월 일상·주요 키워드 (예: 일상 5월일상 일상기록)`
 };
 
-const PERSONA_RULES={
-  '28life':`[인격: 28life — 블로그 주인 본인 말투]
+// 말투는 28 life 하나뿐이다 (2026-11-13 사용자 결정: 다른 말투 프리셋 삭제)
+const PERSONA_RULE=`[인격: 28life — 블로그 주인 본인 말투]
 - 제목: [포스팅 종류]의 공식을 따르되 이모지 하나 정도, 괄호 부연 가능.
-- 도입부(intro.text): 반드시 "안녕하세요!"로 시작 → "오늘은 ~ 후기 들고왔어요/가져왔어요/남겨볼게요"(일상은 "오늘은 ~ 일상 남겨볼게요") → 정보블록 → "그럼 시작해볼게요~!". intro.quote는 false.
-- 정보블록(도입부 안, 줄마다): [포스팅 종류]에서 정한 줄 이름 그대로, 모르면 "확인 필요". 일상은 정보블록 없음
+- 도입부(intro.text): 반드시 "안녕하세요!"로 시작 → "오늘은 ~ 후기 들고왔어요/가져왔어요/남겨볼게요"(일상은 "오늘은 ~ 일상 남겨볼게요") → 정보블록(일상·상품 리뷰는 없음) → "그럼 시작해볼게요~!". intro.quote는 false.
+- 정보블록(도입부 안, 줄마다): [포스팅 종류]에서 정한 줄 이름 그대로, 모르면 "확인 필요". 일상·상품 리뷰는 정보블록 없음
 - 도입 예: "오늘은 ,, 광주 송정동에 있는 서울곱창 내돈내산 후기 들고왔어요 ㅎㅎ"
 - 사진별 코멘트: 대상 한 줄 + 바로 반응(묘사만 하고 끝내지 않는다). "외관은 이렇게 생겼어요!", "한 상 이렇게 나왔어요!", "○○ 한 점 집어봤어요", "보이시죠??", "진짜 멋지죠??", "짜란,,", "짠 -"
 - 시설·안내 사진은 독자가 할 행동이나 팁으로 바꿔 말한다: "주차타워에 주차하심 됩니다!", "테이블이 네개밖에 없어서 꼭 예약하고 가셔야해요 !"
@@ -927,15 +909,8 @@ const PERSONA_RULES={
 - 강조 습관(자연스럽게 섞기): 물결 늘리기(진~~~짜, 너~~무, 조용~~해서), 쉼표로 말끝 흐리기(오늘은 ,, / 흠,,), 느낌표 앞 공백(꼭 ! 한번, 딱 !, 추천합니다-!-!), 초성·이모티콘(ㅎㅎ ㅋㅋㅋ ㅠㅠ ㅎㅅㅎ ㅎ_ㅎ ^.^ ^^.. >_<), 이모지 👍 😲 ❤️ 📖 🔥 가끔, 표현(존맛탱, 대존맛, 찐맛집, 쫀맛집, 내돈내산, 물멍, 알못, 뽕뽑다, 간지, 노포 바이브 제대로, 윤기가 좔좔, 냅다, 럭키~, 옳타쿠나, ㅋㅎ), 크게 만족했다고 했을 때만("재방문 의사 천억퍼센트!", "여기에 1등 드립니다..", "사장님 간 천재에요"), 독자에게 말 걸기(맛있겠쥬?!, 보이시죠??, 딱 봐도 ~죠?!)
 - 단, 맛 표현(존맛탱 등)은 작성자가 맛있다고 했을 때만 쓴다.
 - 마무리(outro): 총평 한두 줄("○○은 ~ 분위기에 ~도 ~도 만족스러웠던 곳이에요 ㅎㅎ") + "다들 ~ 가실일 있으시다면(또는 ~ 찾고 계신다면) 꼭 ! 한번 들러보세요~!!" → "그럼 이만!!" → 마지막 줄에 "-끝-" (반드시 포함)
-- 해시태그: 지역·카테고리 조합 6~8개. 예: 기흥맛집 용인맛집 지곡동맛집 불고기맛집 / 광주맛집 송정동맛집 곱창구이맛집 노포맛집
-- 주 활동 지역: 동탄(남광장·북광장·호수공원), 오산, 용인 기흥, 화성, 수원, 광주(광산구 송정동), 태안. 해외여행 글도 있다(치앙마이).`,
-  'clean':`[인격: clean — 담백 정보형]
-이모지와 감탄사를 거의 쓰지 않는다. 위치·주차·영업시간·메뉴 등 사실 위주로 짧고 단정하게. "~입니다", "~했습니다" 중심. 초성체(ㅎㅎ, ㅋㅋ)와 신조어를 쓰지 않는다. 도입부는 한 줄 요약으로 쓰고 quote=true.`,
-  'emotional':`[인격: emotional — 감성 에세이형]
-장소의 분위기와 그때의 기분을 중심으로 쓴다(단, 작성자가 말한 감정만). 정보는 최소한만 담고 문장은 여유 있게. 과한 이모지·초성체는 쓰지 않고, 느낌표도 아껴 쓴다. 도입부 quote=true.`,
-  'friend':`[인격: friend — 친구한테 말하듯]
-반말로 짧게 끊어 쓴다("갔는데 진짜 괜찮았음", "여긴 웨이팅 좀 길어"). 존댓말을 쓰지 않는다. 솔직하고 담백하게, 이모지는 최소한만. 도입부 quote=false.`
-};
+- 해시태그: 지역·카테고리 조합 6~8개(상품 리뷰는 브랜드·상품 종류). 예: 기흥맛집 용인맛집 지곡동맛집 불고기맛집 / 광주맛집 송정동맛집 곱창구이맛집 노포맛집
+- 주 활동 지역: 동탄(남광장·북광장·호수공원), 오산, 용인 기흥, 화성, 수원, 광주(광산구 송정동), 태안. 해외여행 글도 있다(치앙마이).`;
 
 // 💰 가격 쓰기 스위치에 따라 하나만 보낸다 (공통 규칙은 캐시라 여기서 갈라 둔다)
 const PRICE_RULES={
@@ -962,7 +937,7 @@ function setBusy(b,id){ busy=b; if(id) $(id).classList.toggle('loading',b); upda
 function updateBtns(){
   $('genBtn').disabled=busy;
   // 🪄는 초안이 없어도 장소 이름만 있으면 ②의 위치 정보 칸을 미리 채울 수 있다
-  const canWand=!busy&&!isDaily()&&!!(draft||$('placeHint').value.trim());
+  const canWand=!busy&&!noPlace()&&!!(draft||$('placeHint').value.trim());
   $('wandBtn').disabled=!canWand;
   ['copyAllBtn','copyTitleBtn'].forEach(id=>$(id).disabled=!draft);
 }
@@ -993,8 +968,8 @@ $('genBtn').onclick=async ()=>{
     // ②에 적힌 위치 정보는 확인된 사실로 넘긴다 (🪄를 다시 안 눌러도 되게)
     const info=isDaily()?{address:'',parking:'',hours:''}:placeInfoFromForm(); // 일상은 위치 정보를 보내지 않는다
     const known=[['주소',info.address],['주차',info.parking],['영업시간',info.hours]].filter(x=>x[1]);
-    content.push({type:'text',text:`장소 이름: ${$('placeHint').value.trim()||'(미입력)'}\n전체 한마디: ${$('memo').value.trim()||'(없음)'}`
-      +(known.length?`\n작성자가 확인한 위치 정보(그대로 쓸 것): ${known.map(([k,v])=>`${k}: ${v}`).join(' / ')}`:'')
+    content.push({type:'text',text:`${isReview()?'가게·상품 이름':'장소 이름'}: ${$('placeHint').value.trim()||'(미입력)'}\n전체 한마디: ${$('memo').value.trim()||'(없음)'}`
+      +(known.length?`\n작성자가 확인한 위치 정보(${isReview()?'가게 후기일 때만 그대로 쓸 것':'그대로 쓸 것'}): ${known.map(([k,v])=>`${k}: ${v}`).join(' / ')}`:'')
       +`\n사진 ${snap.length}장 모두에 대해 photos 항목을 써줘.`});
     setStatus(`Claude가 초안 쓰는 중... (사진 ${snap.length}장, 30초~1분)`);
     const j=await callClaude({
@@ -1002,9 +977,9 @@ $('genBtn').onclick=async ()=>{
       // 블로그 글쓰기라 깊은 추론은 필요 없다 → effort를 낮춰 사고 토큰 절약
       output_config:{effort:'medium',format:{type:'json_schema',schema:DRAFT_SCHEMA}},
       system:[
-        {type:'text',text:SYSTEM_RULES,cache_control:{type:'ephemeral'}},
+        {type:'text',text:SYSTEM_RULES},
+        {type:'text',text:PERSONA_RULE,cache_control:{type:'ephemeral'}}, // 공통+말투까지 캐시 (둘 다 매 요청 같은 문자열)
         {type:'text',text:TYPE_RULES[$('postType').value]||TYPE_RULES.food},
-        {type:'text',text:PERSONA_RULES[$('persona').value]||PERSONA_RULES['28life']},
         {type:'text',text:settings.prices?PRICE_RULES.on:PRICE_RULES.off} // 💰 가격 쓰기 스위치
       ],
       messages:[{role:'user',content}]
@@ -1014,7 +989,7 @@ $('genBtn').onclick=async ()=>{
     if(!d) throw new Error('Claude 응답을 읽지 못했어. 다시 눌러줘.');
     draft=fixEmphasis(d); dirty=true;
     remapDraft(snap.map(p=>p.id)); // 생성 중에 사진을 지우거나 옮겼으면 지금 순서로 번호를 옮긴다
-    applyPlaceInfo(info); // Claude가 놓쳐도 ②의 위치 정보가 그대로 들어가게 한 번 더 맞춘다
+    if(!noPlace()) applyPlaceInfo(info); // Claude가 놓쳐도 ②의 위치 정보가 그대로 들어가게 한 번 더 맞춘다
     renderOut(); updateDraftLabel(); saveHistory();
     const msg=`✅ 초안 완성! (${usageText(j)}) 확인·고친 뒤 🏷️ 제목 복사 → 📋 글 전체 복사 → 붙여넣고 글 속 [사진 N] 자리에 사진 넣기. 🗂 내 초안에 자동 저장돼`
       +(String(draft.note||'').trim()?'\n✋ 확인할 점이 있어 → 미리보기 맨 아래를 봐줘':'');
@@ -1022,7 +997,7 @@ $('genBtn').onclick=async ()=>{
     // 모바일은 ③이 화면 아래에 있으니 결과로 내려 준다
     if(matchMedia('(max-width:899px)').matches) $('out').closest('.col').scrollIntoView({behavior:'smooth',block:'start'});
     // ②의 위치 정보(주소·주차·영업시간)에 빈 칸이 있으면 🪄 검색으로 빈 칸만 채운다. 적어 둔 칸은 그대로 쓴다
-    if(settings.autoWand&&!isDaily()&&!(info.address&&info.parking&&info.hours)&&((draft.place&&draft.place.name)||$('placeHint').value.trim())) autoWand=msg;
+    if(settings.autoWand&&!noPlace()&&!(info.address&&info.parking&&info.hours)&&((draft.place&&draft.place.name)||$('placeHint').value.trim())) autoWand=msg;
   }catch(err){ setStatus('⚠️ '+err.message); }
   finally{ setBusy(false,'genBtn'); }
   if(autoWand) runWand(autoWand);
@@ -1307,8 +1282,8 @@ function draftHTML(){
   const ti=(d.thumbnail&&d.thumbnail.index||1)-1;
   if(photos[ti]&&d.thumbnail) h+=sec('썸네일 추천',null,`<img class="pimg" src="${photos[ti].src}"><div class="hint">사진 ${ti+1} — ${esc(d.thumbnail.reason)}</div>`);
   else if(d.thumbnail) h+=sec('썸네일 추천',null,`<div class="hint">사진 ${d.thumbnail.index}번을 대표사진으로 — ${esc(d.thumbnail.reason)}</div>`);
-  // 일상은 장소 글이 아니라 위치·주차 블록과 지도 링크를 만들지 않는다
-  const daily=isDaily();
+  // 일상·상품 리뷰는 장소 글이 아니라 위치·주차 블록과 지도 링크를 만들지 않는다
+  const daily=noPlace();
   const pl=d.place||{};
   if(!daily) h+=sec('위치 · 주차','cp-place',`<div><b>${esc(pl.name)}</b><br>${esc(pl.address)}</div><div style="margin-top:6px">🚗 ${esc(d.parking)}</div>`);
   const intro=d.intro||{};
@@ -1360,7 +1335,7 @@ function geoQueries(addr){
   return [...new Set(q)];
 }
 async function geocodeIfNeeded(){
-  if(!draft||isDaily()||placeCoords(draft)) return;
+  if(!draft||noPlace()||placeCoords(draft)) return;
   const addr=String((draft.place||{}).address||$('addrIn').value||'').trim();
   if(!addr||geoTried.has(addr)) return;
   geoTried.add(addr);
@@ -1613,12 +1588,11 @@ async function setDone(id,v){
 function applyRecord(r,id,done){
   photos=(r.photos||[]).map((p,i)=>({id:Date.now()+Math.random(),src:p.src,keyword:p.keyword,gps:p.gps,time:p.time,short:p.short,
     file:dataURLtoFile(p.src,p.name||`photo-${i+1}.jpg`)}));
-  FORM_KEYS.forEach(k=>{ if(r.form&&typeof r.form[k]==='string') $(k).value=r.form[k];
+  FORM_KEYS.forEach(k=>{ if(r.form&&typeof r.form[k]==='string') $(k).value=formVal(k,r.form[k]);
     else if(['addrIn','parkIn','hoursIn'].includes(k)) $(k).value=''; }); // 위치 칸이 없던 옛 기록: 이전 초안의 위치가 남지 않게
-  // 종류·말투가 없는 기록(종류가 생기기 전 기록, 파일)이거나 목록에 없는 값이면 기본값으로 (이전 글의 값이 남거나 빈 칸이 되지 않게)
+  // 종류가 없는 기록(종류가 생기기 전 기록, 파일)이거나 목록에 없는 값이면 기본값으로 (이전 글의 값이 남거나 빈 칸이 되지 않게)
   if(!(r.form&&r.form.postType)||!$('postType').value) $('postType').value='food';
-  if(!(r.form&&r.form.persona)||!$('persona').value) $('persona').value='28life';
-  updatePersona(); updateTypeUI(); saveForm();
+  updateTypeUI(); saveForm();
   curId=id; curDone=!!done; draft=r.draft?fixEmphasis(r.draft):null; dirty=false; // draft=null: ✨ 생성 전에 저장된 기록
   renderGrid(); clearTimeout(saveTimer); saveTimer=0; // 불러오기만 했는데 '최근 수정'이 바뀌지 않게
   if(!id) saveHistory(); // 파일에서 연 것은 🗂 내 초안에 새로 남겨 다음엔 서랍에서 바로 연다
@@ -1708,7 +1682,7 @@ let tabCh=null;
 function onTabMsg(m){
   if(!m||m.from===TAB_ID||m.t!=='claim'||$('dupOv').classList.contains('show')) return;
   flushSave().then(()=>{ savedPhotos={id:null,sig:''}; }); // 잠그기 전에 저장. 그 뒤 다른 창이 기록을 바꿀 수 있으니 다음 저장 때 사진도 다시 쓴다
-  ['photoOv','histOv','personaOv'].forEach(id=>$(id).classList.contains('show')&&closeOv(id));
+  ['photoOv','histOv'].forEach(id=>$(id).classList.contains('show')&&closeOv(id));
   openOv('dupOv');
 }
 function sendTab(m){
